@@ -159,7 +159,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<Smartphone size={24} />}
                   label="Todos"
-                  value="all"
                   isSelected={filters.deviceType === 'all'}
                   onClick={() => onFiltersChange({ ...filters, deviceType: 'all' })}
                 />
@@ -168,7 +167,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     key={type}
                     icon={getDeviceTypeIcon(type)}
                     label={type}
-                    value={type}
                     isSelected={filters.deviceType === type}
                     onClick={() => onFiltersChange({ ...filters, deviceType: type })}
                   />
@@ -188,7 +186,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<Wifi size={24} />}
                   label="Todos"
-                  value="all"
                   isSelected={filters.connectivity === 'all'}
                   onClick={() => onFiltersChange({ ...filters, connectivity: 'all' })}
                 />
@@ -196,7 +193,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   <FilterCard
                     icon={<Wifi size={24} />}
                     label="Single Chip"
-                    value="single"
                     isSelected={filters.connectivity === 'single'}
                     onClick={() => onFiltersChange({ ...filters, connectivity: 'single' })}
                   />
@@ -205,7 +201,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   <FilterCard
                     icon={<Wifi size={24} />}
                     label="Dual Chip"
-                    value="dual"
                     isSelected={filters.connectivity === 'dual'}
                     onClick={() => onFiltersChange({ ...filters, connectivity: 'dual' })}
                   />
@@ -214,7 +209,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   <FilterCard
                     icon={<AlertTriangle size={24} />}
                     label="Não Identificado"
-                    value="unidentified"
                     isSelected={filters.connectivity === 'unidentified'}
                     onClick={() => onFiltersChange({ ...filters, connectivity: 'unidentified' })}
                   />
@@ -223,7 +217,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   <FilterCard
                     icon={<WifiOff size={24} />}
                     label="Sem Info"
-                    value="none"
                     isSelected={filters.connectivity === 'none'}
                     onClick={() => onFiltersChange({ ...filters, connectivity: 'none' })}
                   />
