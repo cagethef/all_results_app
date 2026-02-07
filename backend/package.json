@@ -1,0 +1,9 @@
+{
+  "name": "getdevice",
+  "version": "1.0.0",
+  "description": "Cloud Function to fetch device test results from BigQuery",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.0.0"
+  }
+}
