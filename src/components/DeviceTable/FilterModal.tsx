@@ -13,12 +13,11 @@ interface FilterModalProps {
 interface FilterCardProps {
   icon: React.ReactNode
   label: string
-  value: string
   isSelected: boolean
   onClick: () => void
 }
 
-function FilterCard({ icon, label, value, isSelected, onClick }: FilterCardProps) {
+function FilterCard({ icon, label, isSelected, onClick }: FilterCardProps) {
   return (
     <button
       onClick={onClick}

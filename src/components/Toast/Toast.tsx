@@ -11,7 +11,7 @@ interface ToastProps {
   duration?: number
 }
 
-export function Toast({ id, message, type, onClose, duration = 2000 }: ToastProps) {
+export function Toast({ message, type, onClose, duration = 2000 }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, duration)
     return () => clearTimeout(timer)
