@@ -12,14 +12,23 @@ export function UnifiedInput({ onDeviceAdded, onOpenOCR }: UnifiedInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    
+    const trimmedInput = input.trim()
+    if (!trimmedInput) return
 
     // Split by comma, tab, or newline and process each entry
-    const entries = input
+    const entries = trimmedInput
       .split(/[,\t\n]+/)
       .map(entry => entry.trim())
       .filter(entry => entry.length > 0)
 
+    if (entries.length === 0) {
+      console.warn('Nenhuma entrada válida encontrada')
+      return
+    }
+
+    let hasInvalidEntry = false
+    
     entries.forEach(entry => {
       // Try to parse as QR code first
       const qrResult = parseQRCode(entry)
@@ -27,15 +36,23 @@ export function UnifiedInput({ onDeviceAdded, onOpenOCR }: UnifiedInputProps) {
       if (qrResult.isValid && qrResult.deviceId) {
         // It's a QR code link, use parsed ID
         onDeviceAdded(qrResult.deviceId)
+      } else if (/^#?\d{8}_\d{2}$/.test(entry)) {
+        // It's a batch (e.g., 20250523_04 or #20250523_04)
+        onDeviceAdded(entry)
       } else if (/^[A-Z0-9]{5,10}$/i.test(entry)) {
         // It's a direct ID
         onDeviceAdded(entry.toUpperCase())
       } else {
-        console.warn('Invalid entry:', entry)
+        console.warn('Formato inválido:', entry)
+        hasInvalidEntry = true
+        alert(`Formato inválido: "${entry}"\n\nFormatos aceitos:\n- ID: YL250QZ (5-10 caracteres)\n- Lote: 20250523_04 ou #20250523_04`)
       }
     })
 
-    setInput('')
+    // Só limpa o input se não houver entradas inválidas
+    if (!hasInvalidEntry) {
+      setInput('')
+    }
   }
 
   return (
@@ -45,7 +62,7 @@ export function UnifiedInput({ onDeviceAdded, onOpenOCR }: UnifiedInputProps) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Digite IDs (separados por vírgula, tab ou Enter)..."
+          placeholder="Digite IDs ou lote (ex: #20250523_04) separados por vírgula..."
           className="w-full px-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm"
         />
       </div>

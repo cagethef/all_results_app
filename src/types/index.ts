@@ -40,6 +40,7 @@ export interface Device {
   overallStatus: TestStatus
   tests: Test[]
   chipInfo?: ChipInfo
+  batch?: string // Batch ID (e.g., "20250523_04_01_CLARO")
 }
 
 // QR Code parsing

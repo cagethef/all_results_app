@@ -18,6 +18,9 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
   const activeTest = !showChips ? device.tests[activeTestIndex] : null
   const DeviceIcon = getDeviceIcon(device.deviceType)
   const iconColors = getDeviceIconColor(device.deviceType)
+  
+  // Extrair prefixo do lote (YYYYMMDD_XX)
+  const batchPrefix = device.batch ? device.batch.match(/^(\d{8}_\d{2})/)?.[1] : null
 
   return (
     <div 
@@ -39,6 +42,11 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
                 {device.id}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">{device.deviceType}</p>
+              {batchPrefix && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  Lote: #{batchPrefix}
+                </p>
+              )}
             </div>
           </div>
           <button

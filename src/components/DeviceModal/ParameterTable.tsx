@@ -16,7 +16,7 @@ export function ParameterTable({ parameters }: ParameterTableProps) {
               Parâmetro
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-              Esperado
+              Referência
             </th>
             <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
               Medido

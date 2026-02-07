@@ -2,10 +2,13 @@ import { DeviceTable } from './components/DeviceTable/DeviceTable'
 import { Scanner } from './components/Scanner/Scanner'
 import { Header } from './components/Layout/Header'
 import { StatsCards } from './components/Layout/StatsCards'
+import { ToastContainer } from './components/Toast/ToastContainer'
 import { useDevices } from './hooks/useDevices'
+import { useToast } from './hooks/useToast'
 
 function App() {
-  const { devices, addDevice, clearDevices, stats } = useDevices()
+  const toast = useToast()
+  const { devices, addDevice, clearDevices, stats } = useDevices(toast)
 
   return (
     <div className="min-h-screen">
@@ -22,6 +25,9 @@ function App() {
         {/* Results Table */}
         <DeviceTable devices={devices} onClearAll={clearDevices} />
       </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
     </div>
   )
 }

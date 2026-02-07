@@ -36,3 +36,4 @@ export function FilterBar({ activeFiltersCount, onOpenModal }: FilterBarProps) {
     </div>
   )
 }
+

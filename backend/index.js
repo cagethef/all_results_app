@@ -28,6 +28,154 @@ const DEVICE_CONFIG = {
   }
 };
 
+const TABLES_CONFIG = [
+  { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id' },
+  { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id' },
+  { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id' },
+  { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id' },
+  { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id' }
+];
+
+const DATASET = 'operations_dbt_dev';
+
+// Função auxiliar para buscar chip info
+async function fetchChipInfo(deviceId, config) {
+  if (!config.hasChipInfo) return null;
+  
+  try {
+    const chipQuery = `
+      SELECT *
+      FROM \`tractian-bi.${DATASET}.int_devices_chip_check\`
+      WHERE id = @deviceId
+      LIMIT 1
+    `;
+    const [chipRows] = await bigquery.query({
+      query: chipQuery,
+      params: { deviceId: deviceId.toUpperCase() },
+      useQueryCache: false
+    });
+    
+    return chipRows[0] ? transformChipInfo(chipRows[0]) : null;
+  } catch (error) {
+    console.error('Error fetching chip info:', error);
+    return null;
+  }
+}
+
+// Função para buscar dispositivos por lote
+async function getDevicesByBatch(batchPrefix, res) {
+  try {
+    const allRowsData = [];
+    
+    // 1. Buscar em todas as tabelas e coletar dados
+    for (const { table, idColumn } of TABLES_CONFIG) {
+      const query = `
+        SELECT * 
+        FROM \`tractian-bi.${DATASET}.${table}\`
+        WHERE batch LIKE @batchPattern
+      `;
+      
+      const [rows] = await bigquery.query({
+        query,
+        params: { batchPattern: `${batchPrefix}%` },
+        useQueryCache: false
+      });
+      
+      // Adiciona idColumn para cada row
+      rows.forEach(row => {
+        row._idColumn = idColumn;
+        row._deviceId = row[idColumn];
+        allRowsData.push(row);
+      });
+    }
+    
+    if (allRowsData.length === 0) {
+      return res.status(404).json({ 
+        error: 'No devices found',
+        message: `Nenhum dispositivo encontrado para o lote ${batchPrefix}` 
+      });
+    }
+    
+    // 2. Coletar IDs que precisam de chip info
+    const deviceIdsNeedingChip = [];
+    allRowsData.forEach(row => {
+      const deviceName = row.device_name;
+      const config = DEVICE_CONFIG[deviceName];
+      if (config && config.hasChipInfo) {
+        deviceIdsNeedingChip.push(row._deviceId);
+      }
+    });
+    
+    // 3. Buscar TODOS os chips de uma vez (1 query)
+    let chipMap = new Map();
+    if (deviceIdsNeedingChip.length > 0) {
+      try {
+        const chipQuery = `
+          SELECT *
+          FROM \`tractian-bi.${DATASET}.int_devices_chip_check\`
+          WHERE id IN UNNEST(@deviceIds)
+        `;
+        
+        const [chipRows] = await bigquery.query({
+          query: chipQuery,
+          params: { deviceIds: deviceIdsNeedingChip },
+          useQueryCache: false
+        });
+        
+        // Criar mapa: deviceId -> chipInfo
+        chipRows.forEach(chipRow => {
+          chipMap.set(chipRow.id, transformChipInfo(chipRow));
+        });
+      } catch (error) {
+        console.error('Error fetching chip info batch:', error);
+        // Continua sem chip info em caso de erro
+      }
+    }
+    
+    // 4. Montar devices usando o mapa de chips
+    const allDevices = [];
+    for (const row of allRowsData) {
+      const deviceId = row._deviceId;
+      const deviceName = row.device_name;
+      const config = DEVICE_CONFIG[deviceName];
+      
+      if (!config) {
+        console.warn(`Unknown device type: ${deviceName}`);
+        continue;
+      }
+      
+      // Buscar chip info no mapa (O(1) lookup)
+      const chipInfo = chipMap.get(deviceId) || null;
+      
+      // Montar device
+      const tests = [transformATP(row, deviceName)];
+      const device = {
+        id: deviceId,
+        deviceType: deviceName,
+        overallStatus: calculateStatus(tests),
+        tests,
+        chipInfo,
+        batch: row.batch || undefined
+      };
+      
+      allDevices.push(device);
+    }
+    
+    return res.json({
+      batch: batchPrefix,
+      count: allDevices.length,
+      devices: allDevices
+    });
+    
+  } catch (error) {
+    console.error('Error in getDevicesByBatch:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
+}
+
 exports.getDevice = async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -37,31 +185,37 @@ exports.getDevice = async (req, res) => {
     return res.status(204).send('');
   }
   
-  const deviceId = req.query.deviceId;
+  const input = req.query.deviceId;
   
-  if (!deviceId || !/^[A-Z0-9]{5,10}$/i.test(deviceId)) {
+  if (!input) {
+    return res.status(400).json({ error: 'deviceId is required' });
+  }
+  
+  // Detectar se é um lote (formato: #?YYYYMMDD_XX)
+  const batchPattern = /^#?(\d{8}_\d{2})$/;
+  const batchMatch = input.match(batchPattern);
+  
+  if (batchMatch) {
+    // É um lote! Buscar todos os devices do lote
+    const batchPrefix = batchMatch[1];
+    return await getDevicesByBatch(batchPrefix, res);
+  }
+  
+  // Validar formato de ID único
+  if (!/^[A-Z0-9]{5,10}$/i.test(input)) {
     return res.status(400).json({ error: 'Invalid deviceId format' });
   }
   
+  const deviceId = input;
+  
   try {
-    // Lista de tabelas pra tentar (cada uma tem nome de ID diferente)
-    const tablesToTry = [
-      { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id' },
-      { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id' },
-      { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id' },
-      { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id' },
-      { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id' }
-    ];
-    
-    const dataset = 'operations_dbt_dev'; // Usando dev por enquanto
-    
     let atpData = null;
     
     // Tenta cada tabela até encontrar o device
-    for (const { table, idColumn } of tablesToTry) {
+    for (const { table, idColumn } of TABLES_CONFIG) {
       const query = `
         SELECT * 
-        FROM \`tractian-bi.${dataset}.${table}\`
+        FROM \`tractian-bi.${DATASET}.${table}\`
         WHERE ${idColumn} = @deviceId
         LIMIT 1
       `;
@@ -92,56 +246,23 @@ exports.getDevice = async (req, res) => {
       });
     }
     
-    // Busca outros testes e chip info em paralelo
-    const testPromises = [];
-    
-    if (config.tables.itp) {
-      // ITP ainda não existe
-      testPromises.push(Promise.resolve({ type: 'itp', data: null }));
-    }
-    
-    if (config.tables.leak) {
-      // Leak ainda não existe
-      testPromises.push(Promise.resolve({ type: 'leak', data: null }));
-    }
-    
-    // Busca chip info se necessário
-    if (config.hasChipInfo) {
-      const chipQuery = `
-        SELECT *
-        FROM \`tractian-bi.${dataset}.int_devices_chip_check\`
-        WHERE id = @deviceId
-        LIMIT 1
-      `;
-      testPromises.push(
-        bigquery.query({
-          query: chipQuery,
-          params: { deviceId: deviceId.toUpperCase() }
-        }).then(([rows]) => ({ type: 'chip', data: rows[0] || null }))
-          .catch(() => ({ type: 'chip', data: null }))
-      );
-    }
-    
-    const results = await Promise.all(testPromises);
+    // Busca chip info
+    const chipInfo = await fetchChipInfo(atpData.device_id, config);
     
     // Monta resposta final
     const tests = [transformATP(atpData, deviceName)];
     
-    const itp = results.find(r => r.type === 'itp');
-    if (itp?.data) tests.push(transformITP(itp.data));
-    
-    const leak = results.find(r => r.type === 'leak');
-    if (leak?.data) tests.push(transformLeak(leak.data));
-    
-    const chipResult = results.find(r => r.type === 'chip');
-    const chipInfo = chipResult?.data ? transformChipInfo(chipResult.data) : undefined;
+    // ITP e Leak ainda não implementados
+    // if (config.tables.itp) tests.push(transformITP(itpData));
+    // if (config.tables.leak) tests.push(transformLeak(leakData));
     
     const device = {
       id: atpData.device_id,
       deviceType: deviceName,
       overallStatus: calculateStatus(tests),
       tests,
-      chipInfo
+      chipInfo,
+      batch: atpData.batch || undefined
     };
     
     return res.json(device);

@@ -47,3 +47,4 @@ export function ActiveFilterBadges({ filters, onRemove, onClearAll }: ActiveFilt
     </div>
   )
 }
+
