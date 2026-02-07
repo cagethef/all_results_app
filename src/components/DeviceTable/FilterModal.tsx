@@ -236,7 +236,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<Wifi size={24} />}
                   label="Todas"
-                  value="all"
                   isSelected={filters.carrier === 'all'}
                   onClick={() => onFiltersChange({ ...filters, carrier: 'all' })}
                 />
@@ -245,7 +244,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     key={carrier}
                     icon={<Wifi size={24} />}
                     label={carrier}
-                    value={carrier}
                     isSelected={filters.carrier === carrier}
                     onClick={() => onFiltersChange({ ...filters, carrier: carrier })}
                   />
@@ -265,7 +263,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<Zap size={24} />}
                   label="Todos os Testes"
-                  value="all"
                   isSelected={filters.testStatus.testName === 'all'}
                   onClick={() => onFiltersChange({ 
                     ...filters, 
@@ -277,7 +274,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     key={test}
                     icon={<Zap size={24} />}
                     label={test}
-                    value={test}
                     isSelected={filters.testStatus.testName === test}
                     onClick={() => onFiltersChange({ 
                       ...filters, 
@@ -297,7 +293,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     <FilterCard
                       icon={<CheckCircle2 size={24} />}
                       label="Todos"
-                      value="all"
                       isSelected={filters.testStatus.status === 'all'}
                       onClick={() => onFiltersChange({ 
                         ...filters, 
@@ -307,7 +302,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     <FilterCard
                       icon={<CheckCircle2 size={24} />}
                       label="Aprovado"
-                      value="approved"
                       isSelected={filters.testStatus.status === 'approved'}
                       onClick={() => onFiltersChange({ 
                         ...filters, 
@@ -317,7 +311,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     <FilterCard
                       icon={<XCircle size={24} />}
                       label="Reprovado"
-                      value="failed"
                       isSelected={filters.testStatus.status === 'failed'}
                       onClick={() => onFiltersChange({ 
                         ...filters, 
@@ -327,7 +320,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                     <FilterCard
                       icon={<Clock size={24} />}
                       label="Pendente"
-                      value="pending"
                       isSelected={filters.testStatus.status === 'pending'}
                       onClick={() => onFiltersChange({ 
                         ...filters, 
@@ -350,7 +342,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
               <FilterCard
                 icon={<CheckCircle2 size={24} />}
                 label="Todos"
-                value="all"
                 isSelected={filters.overallStatus === 'all'}
                 onClick={() => onFiltersChange({ ...filters, overallStatus: 'all' })}
               />
@@ -358,7 +349,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<CheckCircle2 size={24} />}
                   label="Aprovado"
-                  value="approved"
                   isSelected={filters.overallStatus === 'approved'}
                   onClick={() => onFiltersChange({ ...filters, overallStatus: 'approved' })}
                 />
@@ -367,7 +357,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<XCircle size={24} />}
                   label="Reprovado"
-                  value="failed"
                   isSelected={filters.overallStatus === 'failed'}
                   onClick={() => onFiltersChange({ ...filters, overallStatus: 'failed' })}
                 />
@@ -376,7 +365,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<AlertTriangle size={24} />}
                   label="Atenção"
-                  value="warning"
                   isSelected={filters.overallStatus === 'warning'}
                   onClick={() => onFiltersChange({ ...filters, overallStatus: 'warning' })}
                 />
@@ -385,7 +373,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 <FilterCard
                   icon={<Clock size={24} />}
                   label="Pendente"
-                  value="pending"
                   isSelected={filters.overallStatus === 'pending'}
                   onClick={() => onFiltersChange({ ...filters, overallStatus: 'pending' })}
                 />
