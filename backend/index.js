@@ -53,13 +53,15 @@ exports.getDevice = async (req, res) => {
       { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id' }
     ];
     
+    const dataset = 'operations_dbt_dev'; // Usando dev por enquanto
+    
     let atpData = null;
     
     // Tenta cada tabela até encontrar o device
     for (const { table, idColumn } of tablesToTry) {
       const query = `
         SELECT * 
-        FROM \`tractian-bi.operations_dbt.${table}\`
+        FROM \`tractian-bi.${dataset}.${table}\`
         WHERE ${idColumn} = @deviceId
         LIMIT 1
       `;
@@ -67,7 +69,7 @@ exports.getDevice = async (req, res) => {
       const [rows] = await bigquery.query({
         query,
         params: { deviceId: deviceId.toUpperCase() },
-        useQueryCache: true
+        useQueryCache: false  // Desabilitado temporariamente pra dev
       });
       
       if (rows.length > 0) {
@@ -90,7 +92,7 @@ exports.getDevice = async (req, res) => {
       });
     }
     
-    // Busca outros testes em paralelo (quando existirem)
+    // Busca outros testes e chip info em paralelo
     const testPromises = [];
     
     if (config.tables.itp) {
@@ -101,6 +103,23 @@ exports.getDevice = async (req, res) => {
     if (config.tables.leak) {
       // Leak ainda não existe
       testPromises.push(Promise.resolve({ type: 'leak', data: null }));
+    }
+    
+    // Busca chip info se necessário
+    if (config.hasChipInfo) {
+      const chipQuery = `
+        SELECT *
+        FROM \`tractian-bi.${dataset}.int_devices_chip_check\`
+        WHERE id = @deviceId
+        LIMIT 1
+      `;
+      testPromises.push(
+        bigquery.query({
+          query: chipQuery,
+          params: { deviceId: deviceId.toUpperCase() }
+        }).then(([rows]) => ({ type: 'chip', data: rows[0] || null }))
+          .catch(() => ({ type: 'chip', data: null }))
+      );
     }
     
     const results = await Promise.all(testPromises);
@@ -114,12 +133,15 @@ exports.getDevice = async (req, res) => {
     const leak = results.find(r => r.type === 'leak');
     if (leak?.data) tests.push(transformLeak(leak.data));
     
+    const chipResult = results.find(r => r.type === 'chip');
+    const chipInfo = chipResult?.data ? transformChipInfo(chipResult.data) : undefined;
+    
     const device = {
       id: atpData.device_id,
       deviceType: deviceName,
       overallStatus: calculateStatus(tests),
-      tests
-      // chipInfo ignorado por enquanto
+      tests,
+      chipInfo
     };
     
     return res.json(device);
@@ -136,46 +158,46 @@ exports.getDevice = async (req, res) => {
 // Mapa de campos por tipo de dispositivo
 const DEVICE_FIELDS = {
   'EnergyTrac': [
-    { field: 'signal_ref_mean', name: 'Signal', unit: 'dBm' },
-    { field: 'rms_ia_ref_mean', name: 'RMS IA', unit: 'A' },
-    { field: 'rms_ib_ref_mean', name: 'RMS IB', unit: 'A' },
-    { field: 'rms_ic_ref_mean', name: 'RMS IC', unit: 'A' },
-    { field: 'rms_va_ref_mean', name: 'RMS VA', unit: 'V' },
-    { field: 'rms_vb_ref_mean', name: 'RMS VB', unit: 'V' },
-    { field: 'rms_vc_ref_mean', name: 'RMS VC', unit: 'V' },
-    { field: 'modem_temp_ref_mean', name: 'Modem Temp', unit: '°C' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'signal', name: 'Signal', unit: 'dBm' },
+    { prefix: 'rms_ia', name: 'RMS IA', unit: 'A' },
+    { prefix: 'rms_ib', name: 'RMS IB', unit: 'A' },
+    { prefix: 'rms_ic', name: 'RMS IC', unit: 'A' },
+    { prefix: 'rms_va', name: 'RMS VA', unit: 'V' },
+    { prefix: 'rms_vb', name: 'RMS VB', unit: 'V' },
+    { prefix: 'rms_vc', name: 'RMS VC', unit: 'V' },
+    { prefix: 'modem_temp', name: 'Modem Temp', unit: '°C' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ],
   'Omni Receiver': [
-    { field: 'signal_ref_mean', name: 'Signal', unit: 'dBm' },
-    { field: 'modem_temp_ref_mean', name: 'Modem Temp', unit: '°C' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'signal', name: 'Signal', unit: 'dBm' },
+    { prefix: 'modem_temp', name: 'Modem Temp', unit: '°C' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ],
   'OmniTrac': [
-    { field: 'soc_temp_ref_mean', name: 'SoC Temp', unit: '°C' },
-    { field: 'cpu_usage_ref_mean', name: 'CPU Usage', unit: '%' },
-    { field: 'memory_usage_ref_mean', name: 'Memory Usage', unit: 'MB' },
-    { field: 'disk_usage_ref_mean', name: 'Disk Usage', unit: 'MB' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'soc_temp', name: 'SoC Temp', unit: '°C' },
+    { prefix: 'cpu_usage', name: 'CPU Usage', unit: '%' },
+    { prefix: 'memory_usage', name: 'Memory Usage', unit: 'MB' },
+    { prefix: 'disk_usage', name: 'Disk Usage', unit: 'MB' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ],
   'Smart Trac Ultra': [
-    { field: 'sensor_signal_ref_mean', name: 'Sensor Signal', unit: 'dBm' },
-    { field: 'temperature_thermistor_ref_mean', name: 'Temperature Thermistor', unit: '°C' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'sensor_signal', name: 'Sensor Signal', unit: 'dBm' },
+    { prefix: 'temperature_thermistor', name: 'Temperature Thermistor', unit: '°C' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ],
   'Smart Receiver Ultra': [
-    { field: 'sensor_signal_ref_mean', name: 'Sensor Signal', unit: 'dBm' },
-    { field: 'signal_ref_mean', name: 'Signal', unit: 'dBm' },
-    { field: 'modem_voltage_ref_mean', name: 'Modem Voltage', unit: 'V' },
-    { field: 'modem_temp_ref_mean', name: 'Modem Temp', unit: '°C' },
-    { field: 'cpu_temperature_ref_mean', name: 'CPU Temperature', unit: '°C' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'sensor_signal', name: 'Sensor Signal', unit: 'dBm' },
+    { prefix: 'signal', name: 'Signal', unit: 'dBm' },
+    { prefix: 'modem_voltage', name: 'Modem Voltage', unit: 'V' },
+    { prefix: 'modem_temp', name: 'Modem Temp', unit: '°C' },
+    { prefix: 'cpu_temperature', name: 'CPU Temperature', unit: '°C' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ],
   'Unitrac': [
-    { field: 'sensor_signal_ref_mean', name: 'Sensor Signal', unit: 'dBm' },
-    { field: 'internal_temp_c_ref_mean', name: 'Internal Temp', unit: '°C' },
-    { field: 'powerline_voltage_ref_mean', name: 'Powerline Voltage', unit: 'V' },
-    { field: 'low_status_ref_mean', name: 'Low Status', unit: '' }
+    { prefix: 'sensor_signal', name: 'Sensor Signal', unit: 'dBm' },
+    { prefix: 'internal_temp_c', name: 'Internal Temp', unit: '°C' },
+    { prefix: 'powerline_voltage', name: 'Powerline Voltage', unit: 'V' },
+    { prefix: 'low_status', name: 'Low Status', unit: '' }
   ]
 };
 
@@ -183,12 +205,17 @@ function transformATP(data, deviceName) {
   const fields = DEVICE_FIELDS[deviceName] || [];
   const params = [];
   
-  for (const { field, name, unit } of fields) {
-    if (data[field] != null) {
+  for (const { prefix, name, unit } of fields) {
+    const valueField = `${prefix}_value`;
+    const refField = `${prefix}_ref_mean`;
+    const statusField = `${prefix}_status`;
+    
+    if (data[valueField] != null) {
       params.push({
         name,
-        measured: unit ? `${data[field]} ${unit}` : data[field],
-        status: 'approved'
+        measured: unit ? `${data[valueField]} ${unit}` : data[valueField],
+        expected: data[refField] != null ? (unit ? `${data[refField]} ${unit}` : `${data[refField]}`) : undefined,
+        status: data[statusField] === 'PASS' ? 'approved' : data[statusField] === 'FAIL' ? 'failed' : 'pending'
       });
     }
   }
@@ -223,4 +250,23 @@ function calculateStatus(tests) {
   if (tests.some(t => t.status === 'failed')) return 'failed';
   if (tests.some(t => t.status === 'pending')) return 'pending';
   return 'approved';
+}
+
+function transformChipInfo(data) {
+  if (!data || !data.operadora1) return null;
+  
+  const isInactive = data.operadora1 === 'Inactive';
+  const isDual = data.chip_config === 'Dual Chip' && data.sim_ccid2 && data.operadora2 !== 'Inactive';
+  
+  return {
+    type: isInactive ? 'Não Identificado' : isDual ? 'Dual Chip' : 'Single Chip',
+    chip1: {
+      carrier: data.operadora1 === 'Inactive' ? 'Inativo' : data.operadora1,
+      ccid: data.sim_ccid1 || 'N/A'
+    },
+    chip2: isDual ? {
+      carrier: data.operadora2 === 'Inactive' ? 'Inativo' : data.operadora2,
+      ccid: data.sim_ccid2
+    } : undefined
+  };
 }

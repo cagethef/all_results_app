@@ -99,6 +99,9 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                 <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Status Geral
                 </th>
+                <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

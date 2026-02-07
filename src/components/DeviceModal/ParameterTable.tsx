@@ -78,7 +78,7 @@ export function ParameterTable({ parameters }: ParameterTableProps) {
                           : 'text-gray-600'
                       }`}
                     >
-                      {param.status === 'approved' && 'OK'}
+                      {param.status === 'approved' && 'APROVADO'}
                       {param.status === 'failed' && 'Reprovado'}
                       {param.status === 'warning' && 'Tolerável'}
                       {param.status === 'pending' && 'Pendente'}

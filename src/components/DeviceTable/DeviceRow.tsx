@@ -117,6 +117,17 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
           {device.overallStatus === 'pending' && '⏳ Pendente'}
         </span>
       </td>
+      <td className="px-6 py-5 whitespace-nowrap text-center">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg transition-colors"
+        >
+          Detalhes
+        </button>
+      </td>
     </tr>
   )
 })

@@ -82,6 +82,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "signal_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "rms_ia_value",
     "mode": "",
     "type": "STRING",
@@ -92,6 +99,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "name": "rms_ia_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "rms_ia_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -110,6 +124,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "rms_ib_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "rms_ic_value",
     "mode": "",
     "type": "STRING",
@@ -120,6 +141,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "name": "rms_ic_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "rms_ic_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -138,6 +166,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "rms_va_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "rms_vb_value",
     "mode": "",
     "type": "STRING",
@@ -148,6 +183,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "name": "rms_vb_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "rms_vb_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -166,6 +208,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "rms_vc_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "modem_temp_value",
     "mode": "",
     "type": "STRING",
@@ -180,6 +229,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "modem_temp_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "low_status_value",
     "mode": "",
     "type": "STRING",
@@ -190,6 +246,13 @@ fct_all_results_atp_energytrac (JA EXISTE TABELA)
     "name": "low_status_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -241,6 +304,13 @@ fct_all_results_atp_omni_receiver (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "signal_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "low_status_value",
     "mode": "",
     "type": "STRING",
@@ -255,6 +325,13 @@ fct_all_results_atp_omni_receiver (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "modem_temp_value",
     "mode": "",
     "type": "STRING",
@@ -265,6 +342,13 @@ fct_all_results_atp_omni_receiver (JA EXISTE TABELA)
     "name": "modem_temp_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "modem_temp_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -316,6 +400,13 @@ fct_all_results_atp_omnitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "cpu_usage_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "memory_usage_value",
     "mode": "",
     "type": "STRING",
@@ -326,6 +417,13 @@ fct_all_results_atp_omnitrac (JA EXISTE TABELA)
     "name": "memory_usage_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "memory_usage_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -344,6 +442,13 @@ fct_all_results_atp_omnitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "disk_usage_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "soc_temp_value",
     "mode": "",
     "type": "STRING",
@@ -358,6 +463,13 @@ fct_all_results_atp_omnitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "soc_temp_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "low_status_value",
     "mode": "",
     "type": "STRING",
@@ -368,6 +480,13 @@ fct_all_results_atp_omnitrac (JA EXISTE TABELA)
     "name": "low_status_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -419,6 +538,13 @@ fct_all_results_atp_smarttrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "sensor_signal_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "low_status_value",
     "mode": "",
     "type": "STRING",
@@ -433,6 +559,13 @@ fct_all_results_atp_smarttrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "temperature_thermistor_value",
     "mode": "",
     "type": "STRING",
@@ -443,6 +576,13 @@ fct_all_results_atp_smarttrac (JA EXISTE TABELA)
     "name": "temperature_thermistor_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "temperature_thermistor_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -494,6 +634,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "sensor_signal_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "signal_value",
     "mode": "",
     "type": "STRING",
@@ -504,6 +651,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "name": "signal_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "signal_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -522,6 +676,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "modem_temp_value",
     "mode": "",
     "type": "STRING",
@@ -532,6 +693,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "name": "modem_temp_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "modem_temp_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -550,6 +718,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "modem_voltage_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "cpu_temperature_value",
     "mode": "",
     "type": "STRING",
@@ -560,6 +735,13 @@ fct_all_results_atp_receiver (JA EXISTE TABELA)
     "name": "cpu_temperature_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "cpu_temperature_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -597,13 +779,6 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
-    "name": "protocol",
-    "mode": "",
-    "type": "STRING",
-    "description": "",
-    "fields": []
-  },
-  {
     "name": "protocol_group",
     "mode": "",
     "type": "STRING",
@@ -625,6 +800,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "sensor_signal_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "internal_temp_c_value",
     "mode": "",
     "type": "STRING",
@@ -635,6 +817,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "internal_temp_c_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "internal_temp_c_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -653,6 +842,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "powerline_voltage_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "analog_current_value",
     "mode": "",
     "type": "STRING",
@@ -663,6 +859,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "analog_current_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "analog_current_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -681,6 +884,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "analog_voltage_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "celsius_value",
     "mode": "",
     "type": "STRING",
@@ -691,6 +901,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "celsius_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "celsius_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -709,6 +926,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "humidity_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "header_rs485_value",
     "mode": "",
     "type": "STRING",
@@ -719,6 +943,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "header_rs485_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "header_rs485_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -737,6 +968,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "digital_sample_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "count_true_ch1_value",
     "mode": "",
     "type": "STRING",
@@ -747,6 +985,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "count_true_ch1_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "count_true_ch1_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -765,6 +1010,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "count_false_ch1_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "count_true_ch2_value",
     "mode": "",
     "type": "STRING",
@@ -775,6 +1027,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "count_true_ch2_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "count_true_ch2_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
@@ -793,6 +1052,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "fields": []
   },
   {
+    "name": "count_false_ch2_status",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
     "name": "low_status_value",
     "mode": "",
     "type": "STRING",
@@ -803,6 +1069,13 @@ fct_all_results_atp_unitrac (JA EXISTE TABELA)
     "name": "low_status_ref_mean",
     "mode": "",
     "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "low_status_status",
+    "mode": "",
+    "type": "STRING",
     "description": "",
     "fields": []
   },
