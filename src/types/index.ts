@@ -23,7 +23,7 @@ export interface Test {
 }
 
 export interface ChipInfo {
-  type: 'Single Chip' | 'Dual Chip'
+  type: 'Single Chip' | 'Dual Chip' | 'Não Identificado'
   chip1: {
     carrier: string
     ccid: string
