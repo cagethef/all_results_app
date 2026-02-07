@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Device } from '@/types'
-import { createMockDevice, calculateDeviceStats } from '@/utils/deviceUtils'
+import { calculateDeviceStats } from '@/utils/deviceUtils'
 import { ENDPOINTS } from '@/config/api'
 
 /**
@@ -42,10 +42,8 @@ export function useDevices() {
       setError(errorMessage)
       console.error('Error fetching device:', errorMessage)
       
-      // Fallback para mock em caso de erro
-      console.log('Using mock data as fallback')
-      const newDevice = createMockDevice(deviceId)
-      setDevices(prev => [...prev, newDevice])
+      // Mostra erro para o usuário
+      alert(`Erro ao buscar dispositivo ${deviceId}: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
