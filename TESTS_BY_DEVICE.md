@@ -336,3 +336,66 @@ This document maps all device types and their respective tests/parameters found 
 - **Temperature:** Most devices monitor internal temperature
 - **Battery status:** All battery-powered devices
 - **Work order:** Links tests to production batches
+
+
+const DEVICE_TEST_MAP = {
+  'Energy Trac': {
+    tables: {
+      atp: 'energytrac'
+    },
+    hasChipInfo: true
+  },
+  
+  'Omni Trac': {
+    tables: {
+      atp: 'omnitrac',
+      itp: 'omnitrac'
+    },
+    hasChipInfo: false
+  },
+  
+  'Smart Trac': {
+    tables: {
+      atp: 'smarttrac',
+      leak: 'smarttrac'
+    },
+    hasChipInfo: false
+  },
+  
+  'Smart Trac Ultra Gen 2': {
+    tables: {
+      atp: 'smarttrac',
+      itp: 'smarttrac_ultra',
+      leak: 'smarttrac'
+    },
+    hasChipInfo: false
+  },
+  
+  'Omni Receiver': {
+    tables: {
+      atp: 'receiver'
+    },
+    hasChipInfo: true
+  },
+  
+  'Receiver': {
+    tables: {
+      atp: 'receiver',
+      leak: 'receiver'
+    },
+    hasChipInfo: true
+  },
+  
+  'Uni Trac': {
+    tables: {
+      atp: 'unitrac'
+    },
+    hasChipInfo: false
+  }
+};
+
+// Uso:
+const config = DEVICE_TEST_MAP['Smart Trac Ultra Gen 2'];
+// config.tables.atp => 'smarttrac'
+// config.tables.itp => 'smarttrac_ultra'
+// config.tables.leak => 'smarttrac'
