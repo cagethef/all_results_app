@@ -42,11 +42,23 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
                 {device.id}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">{device.deviceType}</p>
-              {batchPrefix && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  Lote: #{batchPrefix}
-                </p>
-              )}
+              <div className="flex items-center gap-2 mt-0.5">
+                {batchPrefix && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Lote: #{batchPrefix}
+                  </p>
+                )}
+                {activeTest?.date && (
+                  <>
+                    {batchPrefix && (
+                      <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+                    )}
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Testado em: {new Date(activeTest.date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <button

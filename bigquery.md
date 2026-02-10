@@ -1093,9 +1093,157 @@ fct_all_results_atp_smarttrac_ultra_gen2 (N EXISTE TABELA AINDA)
 fct_all_results_itp_omnitrac (N EXISTE TABELA AINDA)
 fct_all_results_itp_smarttrac_ultra_gen2 (N EXISTE TABELA AINDA)
 
-fct_all_results_leak_smarttrac_ultra_gen2 (N EXISTE TABELA AINDA)
-fct_all_results_leak_smarttrac (N EXISTE TABELA AINDA)
-fct_all_results_leak_receiver (N EXISTE TABELA AINDA)
+fct_all_results_leak_test (JA EXISTE)
+
+[
+  {
+    "name": "device_id",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "jig_id",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calibration_name",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "info_device",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "info_batch",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "test_date",
+    "mode": "",
+    "type": "DATE",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_mean_drop",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_error_drop",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_mean_slope",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_error_slope",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_mean_fit_qual",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_error_fit_qual",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_reference_id",
+    "mode": "",
+    "type": "STRING",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "calib_last_calib",
+    "mode": "",
+    "type": "DATE",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "test_slope",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "test_drop",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "test_r2",
+    "mode": "",
+    "type": "FLOAT",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "result_drop_pass",
+    "mode": "",
+    "type": "BOOLEAN",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "result_slope_pass",
+    "mode": "",
+    "type": "BOOLEAN",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "result_r2_pass",
+    "mode": "",
+    "type": "BOOLEAN",
+    "description": "",
+    "fields": []
+  },
+  {
+    "name": "result_final_pass",
+    "mode": "",
+    "type": "BOOLEAN",
+    "description": "",
+    "fields": []
+  }
+]
 ```
 
 ## Custo

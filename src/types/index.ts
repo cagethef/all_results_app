@@ -12,6 +12,11 @@ export interface Parameter {
   errorPercentage?: number
 }
 
+export interface Section {
+  name: string
+  parameters: Parameter[]
+}
+
 export interface Test {
   testName: string
   testType: string // For icons: "electrical", "mechanical", "leak", etc
@@ -19,7 +24,8 @@ export interface Test {
   date?: string
   responsible?: string
   observations?: string
-  parameters: Parameter[]
+  parameters?: Parameter[] // Legacy: usado quando não há sections
+  sections?: Section[] // Novo: para testes com múltiplas abas (ex: Leak Test + Calibração)
 }
 
 export interface ChipInfo {
