@@ -43,7 +43,7 @@ const TABLES_CONFIG = [
 
   // ITP tables (ITP do Omni Trac tem nomes de colunas diferentes!)
   { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'batch_number' },
-  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_completed_at', batchColumn: 'batch' },
 
   // Leak test
   { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'batch' }
@@ -105,6 +105,8 @@ function inferDeviceTypeFromLeak(info_device) {
 
 // Função auxiliar para inferir tipo do dispositivo a partir do ITP
 function inferDeviceTypeFromITP(data, tableName) {
+  console.log(`[DEBUG] inferDeviceTypeFromITP - table: ${tableName}, batch_device_type: ${data.batch_device_type}`);
+
   // Se for da tabela omnitrac, sempre é OmniTrac
   if (tableName === 'fct_all_results_itp_omnitrac') {
     return 'OmniTrac';
@@ -112,7 +114,15 @@ function inferDeviceTypeFromITP(data, tableName) {
 
   // Se for da tabela smarttrac_ultra_gen2, usar batch_device_type
   if (tableName === 'fct_all_results_itp_smarttrac_ultra_gen2') {
-    return data.batch_device_type || null;
+    let deviceType = data.batch_device_type || null;
+
+    // Mapear variações de nome para o nome padrão
+    if (deviceType === 'STU Gen 2') {
+      deviceType = 'Smart Trac Ultra Gen 2';
+    }
+
+    console.log(`[DEBUG] Inferred from Gen2 ITP: ${deviceType}`);
+    return deviceType;
   }
 
   return null;
@@ -154,6 +164,8 @@ async function searchAllTables(deviceId) {
     `;
 
     try {
+      console.log(`[DEBUG] Querying ${table} with idColumn=${idColumn}, deviceId=${deviceId.toUpperCase()}`);
+
       const [rows] = await bigquery.query({
         query,
         params: { deviceId: deviceId.toUpperCase() },
@@ -161,6 +173,12 @@ async function searchAllTables(deviceId) {
       });
 
       if (rows.length > 0) {
+        console.log(`[DEBUG] Found result in ${table}:`, {
+          originalIdField: idColumn,
+          originalIdValue: rows[0][idColumn],
+          testType
+        });
+
         rows[0].device_id = rows[0][idColumn]; // Normaliza device_id
         rows[0].batch = rows[0][batchColumn]; // Normaliza batch
         rows[0].test_date = rows[0][dateColumn]; // Normaliza test_date
@@ -168,15 +186,18 @@ async function searchAllTables(deviceId) {
         rows[0]._tableName = table; // Adiciona nome da tabela
         return rows[0];
       }
+      console.log(`[DEBUG] No results in ${table}`);
       return null;
     } catch (error) {
-      console.error(`Error searching table ${table}:`, error);
+      console.error(`Error searching table ${table}:`, error.message);
       return null;
     }
   });
 
   const results = await Promise.all(promises);
-  return results.filter(result => result !== null);
+  const filtered = results.filter(result => result !== null);
+  console.log(`[DEBUG] Total results found: ${filtered.length}`, filtered.map(r => ({ table: r._tableName, type: r._testType })));
+  return filtered;
 }
 
 // Função para buscar dispositivos por lote
@@ -248,22 +269,29 @@ async function getDevicesByBatch(batchPrefix, res) {
 
       const device = deviceMap.get(deviceId);
 
-      // Adicionar teste ao dispositivo
+      // Adicionar teste ao dispositivo (SEM determinar deviceName ainda)
       if (testType === 'atp') {
         device.atpData = row;
-        device.deviceName = row.device_name; // ATP tem prioridade no device name
       } else if (testType === 'itp') {
         device.itpData = row;
-        // Se ainda não tem device name (não tem ATP), inferir do ITP
-        if (!device.deviceName) {
-          device.deviceName = inferDeviceTypeFromITP(row, row._tableName);
-        }
       } else if (testType === 'leak') {
         device.leakData = row;
-        // Se ainda não tem device name (não tem ATP nem ITP), inferir do Leak
-        if (!device.deviceName) {
-          device.deviceName = inferDeviceTypeFromLeak(row.info_device);
-        }
+      }
+    });
+
+    // Determinar deviceName para cada dispositivo após coletar TODOS os testes
+    deviceMap.forEach((device, deviceId) => {
+      if (device.atpData) {
+        // Prioridade 1: usar device_name do ATP
+        device.deviceName = device.atpData.device_name;
+      } else if (device.itpData) {
+        // Prioridade 2: usar ITP (independente se tem Leak ou não)
+        // Se tem ITP de Gen 2 + Leak → será "Smart Trac Ultra Gen 2"
+        // Se tem ITP de Omnitrac → será "Omni Trac"
+        device.deviceName = inferDeviceTypeFromITP(device.itpData, device.itpData._tableName);
+      } else if (device.leakData) {
+        // Prioridade 3: usar Leak (só se não tem ATP nem ITP)
+        device.deviceName = inferDeviceTypeFromLeak(device.leakData.info_device);
       }
     });
 
@@ -448,21 +476,32 @@ exports.getDevice = async (req, res) => {
     const leakData = allResults.find(r => r._testType === 'leak');
     const itpData = allResults.find(r => r._testType === 'itp');
 
-    // 4. Determinar tipo do dispositivo (prioridade: ATP > ITP > Leak)
+    // 4. Determinar tipo do dispositivo considerando TODAS as fontes disponíveis
     let deviceName = null;
     let deviceIdNormalized = null;
     let batch = null;
+
+    console.log(`[DEBUG] Device ${deviceId} - Found tests:`, {
+      hasATP: !!atpData,
+      hasITP: !!itpData,
+      hasLeak: !!leakData,
+      itpTable: itpData?._tableName
+    });
 
     if (atpData) {
       // Prioridade 1: usar device_name do ATP
       deviceName = atpData.device_name;
       deviceIdNormalized = atpData.device_id;
       batch = atpData.batch;
+      console.log(`[DEBUG] Using ATP for device type: ${deviceName}`);
     } else if (itpData) {
-      // Prioridade 2: inferir device type do ITP
+      // Prioridade 2: usar ITP (independente se tem Leak ou não)
+      // Se tem ITP de Gen 2 + Leak → será "Smart Trac Ultra Gen 2"
+      // Se tem ITP de Omnitrac → será "Omni Trac"
       deviceName = inferDeviceTypeFromITP(itpData, itpData._tableName);
       deviceIdNormalized = itpData.device_id;
       batch = itpData.batch;
+      console.log(`[DEBUG] Using ITP for device type: ${deviceName}`);
 
       if (!deviceName) {
         return res.status(500).json({
@@ -471,7 +510,7 @@ exports.getDevice = async (req, res) => {
         });
       }
     } else if (leakData) {
-      // Prioridade 3: inferir device type do Leak Test
+      // Prioridade 3: usar Leak (só se não tem ATP nem ITP)
       deviceName = inferDeviceTypeFromLeak(leakData.info_device);
       deviceIdNormalized = leakData.device_id;
       batch = leakData.batch;
@@ -869,13 +908,168 @@ function transformITP_OmniTrac(data) {
  * Transform ITP data for Smart Trac Ultra Gen 2 (12 provisioning steps)
  */
 function transformITP_SmartTracGen2(data) {
-  // TODO: Implementar quando tabela existir
+  // Helper function para converter status string para TestStatus
+  const getStatus = (statusStr) => {
+    if (!statusStr) return 'pending';
+    const upper = String(statusStr).toUpperCase();
+    if (upper === 'PASSED' || upper === 'PASS' || upper === 'OK') return 'approved';
+    if (upper === 'FAILED' || upper === 'FAIL') return 'failed';
+    return 'pending';
+  };
+
+  // Section 1: Setup & Discovery (Steps 1-3)
+  const setupParams = [
+    {
+      name: 'Step 1: Initialization',
+      measured: getStatus(data.step1_status) === 'approved' ? 'OK' : 'FAIL',
+      status: getStatus(data.step1_status),
+      parameterType: 'system'
+    },
+    {
+      name: 'Step 2: External ID',
+      measured: data.step2_external_id_read || 'N/A',
+      status: data.step2_valid ? 'approved' : 'failed',
+      parameterType: 'system'
+    },
+    {
+      name: 'Step 3: BLE Discovery',
+      measured: data.step3_device_name || data.step3_device_address || 'N/A',
+      status: getStatus(data.step3_status),
+      parameterType: 'network'
+    }
+  ];
+
+  // Section 2: Components & Sensors (Steps 4-6)
+  const componentsParams = [
+    {
+      name: 'Step 4: Components Check',
+      measured: data.step4_components_ok != null && data.step4_components_total != null
+        ? `${data.step4_components_ok}/${data.step4_components_total}`
+        : 'N/A',
+      status: getStatus(data.step4_status),
+      parameterType: 'system'
+    },
+    {
+      name: 'Step 5: Humidity',
+      measured: data.step5_humidity_value != null ? `${data.step5_humidity_value} %` : 'N/A',
+      status: data.step5_humidity_passed ? 'approved' : 'failed',
+      parameterType: 'humidity'
+    },
+    {
+      name: 'Step 5: Temperature',
+      measured: data.step5_temp_value != null ? `${data.step5_temp_value} °C` : 'N/A',
+      status: data.step5_temp_passed ? 'approved' : 'failed',
+      parameterType: 'temperature'
+    },
+    {
+      name: 'Step 5: MCU Temperature',
+      measured: data.step5_mcu_temp_value != null ? `${data.step5_mcu_temp_value} °C` : 'N/A',
+      status: data.step5_mcu_temp_passed ? 'approved' : 'failed',
+      parameterType: 'temperature'
+    },
+    {
+      name: 'Step 6: SAS Available',
+      measured: data.step6_sas_available ? 'Yes' : 'No',
+      status: getStatus(data.step6_status),
+      parameterType: 'system'
+    }
+  ];
+
+  // Section 3: Vibration Tests (Steps 7-12)
+  const vibrationParams = [];
+
+  // Step 7: Vibration (XYZ)
+  if (data.step7_status) {
+    vibrationParams.push({
+      name: 'Step 7: RMS (X/Y/Z)',
+      measured: `${data.step7_rms_x || 'N/A'} / ${data.step7_rms_y || 'N/A'} / ${data.step7_rms_z || 'N/A'}`,
+      status: getStatus(data.step7_validation_overall || data.step7_status),
+      parameterType: 'vibration'
+    });
+  }
+
+  // Step 8: Vibration (XYZ)
+  if (data.step8_status) {
+    vibrationParams.push({
+      name: 'Step 8: RMS (X/Y/Z)',
+      measured: `${data.step8_rms_x || 'N/A'} / ${data.step8_rms_y || 'N/A'} / ${data.step8_rms_z || 'N/A'}`,
+      status: getStatus(data.step8_validation_overall || data.step8_status),
+      parameterType: 'vibration'
+    });
+  }
+
+  // Step 9: Vibration
+  if (data.step9_status) {
+    vibrationParams.push({
+      name: 'Step 9: RMS',
+      measured: data.step9_rms != null ? `${data.step9_rms}` : 'N/A',
+      status: getStatus(data.step9_validation_overall || data.step9_status),
+      parameterType: 'vibration'
+    });
+  }
+
+  // Step 10: Vibration (XYZ + FRF Score)
+  if (data.step10_status) {
+    vibrationParams.push({
+      name: 'Step 10: RMS (X/Y/Z)',
+      measured: `${data.step10_rms_x || 'N/A'} / ${data.step10_rms_y || 'N/A'} / ${data.step10_rms_z || 'N/A'}`,
+      status: getStatus(data.step10_validation_overall || data.step10_status),
+      parameterType: 'vibration'
+    });
+    if (data.step10_frf_score != null) {
+      vibrationParams.push({
+        name: 'Step 10: FRF Score',
+        measured: `${data.step10_frf_score}`,
+        status: getStatus(data.step10_validation_overall || data.step10_status),
+        parameterType: 'vibration'
+      });
+    }
+  }
+
+  // Step 11: Vibration (XYZ)
+  if (data.step11_status) {
+    vibrationParams.push({
+      name: 'Step 11: RMS (X/Y/Z)',
+      measured: `${data.step11_rms_x || 'N/A'} / ${data.step11_rms_y || 'N/A'} / ${data.step11_rms_z || 'N/A'}`,
+      status: getStatus(data.step11_validation_overall || data.step11_status),
+      parameterType: 'vibration'
+    });
+  }
+
+  // Step 12: Vibration
+  if (data.step12_status) {
+    vibrationParams.push({
+      name: 'Step 12: RMS',
+      measured: data.step12_rms != null ? `${data.step12_rms}` : 'N/A',
+      status: getStatus(data.step12_validation_overall || data.step12_status),
+      parameterType: 'vibration'
+    });
+  }
+
+  // Calcular status geral
+  const allParams = [...setupParams, ...componentsParams, ...vibrationParams];
+  const hasFailed = allParams.some(p => p.status === 'failed');
+  const overallStatus = data.final_result ? getStatus(data.final_result) : (hasFailed ? 'failed' : 'approved');
+
   return {
     testName: 'ITP',
     testType: 'electrical',
-    status: 'pending',
-    date: parseTestDate(data.test_date),
-    parameters: []
+    status: overallStatus,
+    date: parseTestDate(data.test_completed_at),
+    sections: [
+      {
+        name: 'Setup & Discovery',
+        parameters: setupParams
+      },
+      {
+        name: 'Components & Sensors',
+        parameters: componentsParams
+      },
+      {
+        name: 'Vibration Tests',
+        parameters: vibrationParams
+      }
+    ]
   };
 }
 
