@@ -34,19 +34,19 @@ const DEVICE_CONFIG = {
 
 const TABLES_CONFIG = [
   // ATP tables
-  { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id', testType: 'atp' },
-  { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id', testType: 'atp' },
-  { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id', testType: 'atp' },
-  { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id', testType: 'atp' },
-  { table: 'fct_all_results_atp_smarttrac', idColumn: 'sensor_id', testType: 'atp' },
-  { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id', testType: 'atp' },
+  { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_smarttrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
 
-  // ITP tables
-  { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp' },
-  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp' },
+  // ITP tables (ITP do Omni Trac tem nomes de colunas diferentes!)
+  { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'batch_number' },
+  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_date', batchColumn: 'batch' },
 
   // Leak test
-  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak' }
+  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'batch' }
 ];
 
 const DATASET = 'operations_dbt';
@@ -144,12 +144,12 @@ async function fetchChipInfo(deviceId, config) {
 
 // Função auxiliar para buscar em TODAS as tabelas (ATP, ITP, Leak) em paralelo
 async function searchAllTables(deviceId) {
-  const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType }) => {
+  const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType, dateColumn, batchColumn }) => {
     const query = `
       SELECT *
       FROM \`tractian-bi.${DATASET}.${table}\`
       WHERE ${idColumn} = @deviceId
-      ORDER BY test_date DESC
+      ORDER BY ${dateColumn} DESC
       LIMIT 1
     `;
 
@@ -162,6 +162,8 @@ async function searchAllTables(deviceId) {
 
       if (rows.length > 0) {
         rows[0].device_id = rows[0][idColumn]; // Normaliza device_id
+        rows[0].batch = rows[0][batchColumn]; // Normaliza batch
+        rows[0].test_date = rows[0][dateColumn]; // Normaliza test_date
         rows[0]._testType = testType; // Adiciona tipo do teste
         rows[0]._tableName = table; // Adiciona nome da tabela
         return rows[0];
@@ -181,14 +183,14 @@ async function searchAllTables(deviceId) {
 async function getDevicesByBatch(batchPrefix, res) {
   try {
     // 1. Buscar em TODAS as tabelas (ATP, ITP, Leak) em paralelo
-    const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType }) => {
+    const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType, dateColumn, batchColumn }) => {
       const query = `
         SELECT * EXCEPT(row_num)
         FROM (
           SELECT *,
-            ROW_NUMBER() OVER (PARTITION BY ${idColumn} ORDER BY test_date DESC) as row_num
+            ROW_NUMBER() OVER (PARTITION BY ${idColumn} ORDER BY ${dateColumn} DESC) as row_num
           FROM \`tractian-bi.${DATASET}.${table}\`
-          WHERE batch LIKE @batchPattern
+          WHERE ${batchColumn} LIKE @batchPattern
         )
         WHERE row_num = 1
       `;
@@ -203,6 +205,8 @@ async function getDevicesByBatch(batchPrefix, res) {
         // Adiciona metadados para cada row
         rows.forEach(row => {
           row.device_id = row[idColumn]; // Normaliza device_id
+          row.batch = row[batchColumn]; // Normaliza batch
+          row.test_date = row[dateColumn]; // Normaliza test_date
           row._testType = testType;
           row._tableName = table;
         });
@@ -343,7 +347,8 @@ async function getDevicesByBatch(batchPrefix, res) {
       // ITP - verificar se o dispositivo deve ter
       if (config.tables.itp) {
         if (itpData) {
-          tests.push(transformITP(itpData));
+          const itpTableName = `fct_all_results_itp_${config.tables.itp}`;
+          tests.push(transformITP(itpData, itpTableName));
         } else {
           // Dispositivo deve ter ITP mas não foi encontrado
           tests.push({
@@ -510,7 +515,8 @@ exports.getDevice = async (req, res) => {
     // ITP - verificar se o dispositivo deve ter
     if (config.tables.itp) {
       if (itpData) {
-        tests.push(transformITP(itpData));
+        const itpTableName = `fct_all_results_itp_${config.tables.itp}`;
+        tests.push(transformITP(itpData, itpTableName));
       } else {
         // Dispositivo deve ter ITP mas não foi encontrado
         tests.push({
@@ -632,11 +638,242 @@ function transformATP(data, deviceName) {
   };
 }
 
-function transformITP(data) {
+function transformITP(data, tableName) {
+  // Detectar qual ITP baseado na tabela
+  if (tableName === 'fct_all_results_itp_omnitrac') {
+    return transformITP_OmniTrac(data);
+  }
+  
+  if (tableName === 'fct_all_results_itp_smarttrac_ultra_gen2') {
+    return transformITP_SmartTracGen2(data);
+  }
+  
+  // Fallback (caso não reconheça a tabela)
   return {
     testName: 'ITP',
     testType: 'electrical',
-    status: 'approved',
+    status: 'pending',
+    date: parseTestDate(data.test_date),
+    parameters: []
+  };
+}
+
+/**
+ * Transform ITP data for Omni Trac (26 tests organized in 4 sections)
+ */
+function transformITP_OmniTrac(data) {
+  // Section 1: Power & System (6 tests)
+  const powerSystemParams = [
+    {
+      name: 'Power Enables',
+      measured: data.power_enables_status ? 'OK' : 'FAIL',
+      status: data.power_enables_status ? 'approved' : 'failed',
+      parameterType: 'electrical'
+    },
+    {
+      name: 'Power Good Lines',
+      measured: data.power_good_lines_status ? 'OK' : 'FAIL',
+      status: data.power_good_lines_status ? 'approved' : 'failed',
+      parameterType: 'electrical'
+    },
+    {
+      name: 'SoC Temperature',
+      measured: data.soc_temp_value != null ? `${data.soc_temp_value} °C` : 'N/A',
+      status: data.soc_temp_status ? 'approved' : 'failed',
+      parameterType: 'temperature'
+    },
+    {
+      name: 'GPU Temperature',
+      measured: data.gpu_temp_value != null ? `${data.gpu_temp_value} °C` : 'N/A',
+      status: data.gpu_temp_status ? 'approved' : 'failed',
+      parameterType: 'temperature'
+    },
+    {
+      name: 'CPU Usage',
+      measured: data.cpu_usage_value != null ? `${data.cpu_usage_value} %` : 'N/A',
+      status: data.cpu_usage_status ? 'approved' : 'failed',
+      parameterType: 'system'
+    },
+    {
+      name: 'Memory Usage',
+      measured: data.memory_usage_value != null ? `${data.memory_usage_value} MB` : 'N/A',
+      status: data.memory_usage_status ? 'approved' : 'failed',
+      parameterType: 'system'
+    }
+  ];
+
+  // Section 2: Electrical (6 tests)
+  const electricalParams = [
+    {
+      name: 'Front Panel 24V',
+      measured: data.frontpanel_bus_24v_value != null ? `${data.frontpanel_bus_24v_value} mV` : 'N/A',
+      status: data.frontpanel_bus_24v_status ? 'approved' : 'failed',
+      parameterType: 'voltage'
+    },
+    {
+      name: 'Front Panel 5V',
+      measured: data.frontpanel_bus_5v_value != null ? `${data.frontpanel_bus_5v_value} mV` : 'N/A',
+      status: data.frontpanel_bus_5v_status ? 'approved' : 'failed',
+      parameterType: 'voltage'
+    },
+    {
+      name: 'System 24V',
+      measured: data.sys_24v_value != null ? `${data.sys_24v_value} mV` : 'N/A',
+      status: data.sys_24v_status ? 'approved' : 'failed',
+      parameterType: 'voltage'
+    },
+    {
+      name: 'System 5V',
+      measured: data.sys_5v_value != null ? `${data.sys_5v_value} mV` : 'N/A',
+      status: data.sys_5v_status ? 'approved' : 'failed',
+      parameterType: 'voltage'
+    },
+    {
+      name: 'Fuse 24V Monitor',
+      measured: data.fuse24v_aux_imon_value != null ? `${data.fuse24v_aux_imon_value} A` : 'N/A',
+      status: data.fuse24v_aux_imon_status ? 'approved' : 'failed',
+      parameterType: 'current'
+    },
+    {
+      name: 'Fuse 5V Monitor',
+      measured: data.fuse5v_aux_imon_value != null ? `${data.fuse5v_aux_imon_value} A` : 'N/A',
+      status: data.fuse5v_aux_imon_status ? 'approved' : 'failed',
+      parameterType: 'current'
+    }
+  ];
+
+  // Section 3: Communication (9 tests)
+  const communicationParams = [
+    {
+      name: 'USB Check Match',
+      measured: data.usb_check_match_status ? 'OK' : 'FAIL',
+      status: data.usb_check_match_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'Ethernet MAC',
+      measured: data.eth0_mac_value || 'N/A',
+      status: data.eth0_mac_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'iPerf Ethernet',
+      measured: data.iperf_eth_value != null ? `${data.iperf_eth_value} Mbps` : 'N/A',
+      status: data.iperf_eth_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'iPerf OTG',
+      measured: data.iperf_otg_error || 'OK',
+      status: data.iperf_otg_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'RS485 Full Duplex',
+      measured: data.rs485_fd_value || 'N/A',
+      status: data.rs485_fd_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'RS485 Half Duplex',
+      measured: data.rs485_hd_value != null ? `${data.rs485_hd_value}` : 'N/A',
+      status: data.rs485_hd_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'RS232',
+      measured: data.rs232_value || 'N/A',
+      status: data.rs232_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'OT485 FD Master',
+      measured: data.ot485_fd_master_value || 'N/A',
+      status: data.ot485_fd_master_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    },
+    {
+      name: 'OT485 FD Slave',
+      measured: data.ot485_fd_slave_value || 'N/A',
+      status: data.ot485_fd_slave_status ? 'approved' : 'failed',
+      parameterType: 'network'
+    }
+  ];
+
+  // Section 4: Storage & External (5 tests)
+  const storageExternalParams = [
+    {
+      name: 'MMC CID',
+      measured: data.mmc_cid_value || 'N/A',
+      status: data.mmc_cid_status ? 'approved' : 'failed',
+      parameterType: 'storage'
+    },
+    {
+      name: 'EEPROM',
+      measured: data.eeprom_value || 'N/A',
+      status: data.eeprom_status ? 'approved' : 'failed',
+      parameterType: 'storage'
+    },
+    {
+      name: 'RTC PCF',
+      measured: data.rtc_pcf_value || 'N/A',
+      status: data.rtc_pcf_status ? 'approved' : 'failed',
+      parameterType: 'system'
+    },
+    {
+      name: 'External ID Test',
+      measured: data.external_id_test_value || 'N/A',
+      status: data.external_id_test_status ? 'approved' : 'failed',
+      parameterType: 'system'
+    },
+    {
+      name: 'Controller Timestamp',
+      measured: data.controller_timestamp_value || 'N/A',
+      status: data.controller_timestamp_status ? 'approved' : 'failed',
+      parameterType: 'system'
+    }
+  ];
+
+  // Calcular status geral (se algum falhou, ITP falhou)
+  const allParams = [...powerSystemParams, ...electricalParams, ...communicationParams, ...storageExternalParams];
+  const hasFailed = allParams.some(p => p.status === 'failed');
+  const overallStatus = hasFailed ? 'failed' : 'approved';
+
+  return {
+    testName: 'ITP',
+    testType: 'electrical',
+    status: overallStatus,
+    date: parseTestDate(data.test_date),
+    sections: [
+      {
+        name: 'Power & System',
+        parameters: powerSystemParams
+      },
+      {
+        name: 'Electrical',
+        parameters: electricalParams
+      },
+      {
+        name: 'Communication',
+        parameters: communicationParams
+      },
+      {
+        name: 'Storage & External',
+        parameters: storageExternalParams
+      }
+    ]
+  };
+}
+
+/**
+ * Transform ITP data for Smart Trac Ultra Gen 2 (12 provisioning steps)
+ */
+function transformITP_SmartTracGen2(data) {
+  // TODO: Implementar quando tabela existir
+  return {
+    testName: 'ITP',
+    testType: 'electrical',
+    status: 'pending',
     date: parseTestDate(data.test_date),
     parameters: []
   };
