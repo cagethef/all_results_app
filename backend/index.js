@@ -15,7 +15,7 @@ const DEVICE_CONFIG = {
     hasChipInfo: false
   },
   'Smart Trac Ultra Gen 2': {
-    tables: { atp: 'smarttrac', itp: 'smarttrac_ultra_gen2', leak: 'smarttrac' },
+    tables: { atp: 'smarttrac_ultra_gen2', itp: 'smarttrac_ultra_gen2', leak: 'smarttrac' },
     hasChipInfo: false
   },
   'Omni Receiver': {
@@ -40,6 +40,7 @@ const TABLES_CONFIG = [
   { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
   { table: 'fct_all_results_atp_smarttrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
   { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch' },
+  { table: 'fct_all_results_atp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'ingestion_ts', batchColumn: 'batch' },
 
   // ITP tables (ITP do Omni Trac tem nomes de colunas diferentes!)
   { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'batch_number' },
@@ -84,6 +85,16 @@ function parseTestDate(testDate) {
   }
 }
 
+// Função auxiliar para limpar batch do ATP Gen 2
+// Converte "#20251105_10_01_atpResults_20251218_095129" em "#20251105_10"
+function cleanGen2Batch(batch) {
+  if (!batch) return batch;
+
+  // Match pattern: #YYYYMMDD_NN (mantém apenas a parte inicial)
+  const match = batch.match(/^(#\d{8}_\d{2})/);
+  return match ? match[1] : batch;
+}
+
 // Função auxiliar para inferir tipo do dispositivo a partir do info_device do Leak Test
 function inferDeviceTypeFromLeak(info_device) {
   if (!info_device) return null;
@@ -101,6 +112,25 @@ function inferDeviceTypeFromLeak(info_device) {
   }
 
   return null;
+}
+
+// Função auxiliar para inferir tipo do dispositivo a partir do ATP
+function inferDeviceTypeFromATP(data, tableName) {
+  // Se for ATP Gen 2, usar type_ops
+  if (tableName === 'fct_all_results_atp_smarttrac_ultra_gen2') {
+    let deviceType = data.type_ops || null;
+
+    // Mapear variações de nome para o nome padrão
+    if (deviceType === 'Smart Trac Ultra Gen2') {
+      deviceType = 'Smart Trac Ultra Gen 2';
+    }
+
+    console.log(`[DEBUG] Inferred from Gen2 ATP: ${deviceType} (type_ops: ${data.type_ops})`);
+    return deviceType;
+  }
+
+  // Para outras tabelas ATP, usar device_name
+  return data.device_name || null;
 }
 
 // Função auxiliar para inferir tipo do dispositivo a partir do ITP
@@ -180,7 +210,11 @@ async function searchAllTables(deviceId) {
         });
 
         rows[0].device_id = rows[0][idColumn]; // Normaliza device_id
-        rows[0].batch = rows[0][batchColumn]; // Normaliza batch
+
+        // Limpar batch se for ATP Gen 2
+        const batchValue = rows[0][batchColumn];
+        rows[0].batch = table === 'fct_all_results_atp_smarttrac_ultra_gen2' ? cleanGen2Batch(batchValue) : batchValue;
+
         rows[0].test_date = rows[0][dateColumn]; // Normaliza test_date
         rows[0]._testType = testType; // Adiciona tipo do teste
         rows[0]._tableName = table; // Adiciona nome da tabela
@@ -226,7 +260,11 @@ async function getDevicesByBatch(batchPrefix, res) {
         // Adiciona metadados para cada row
         rows.forEach(row => {
           row.device_id = row[idColumn]; // Normaliza device_id
-          row.batch = row[batchColumn]; // Normaliza batch
+
+          // Limpar batch se for ATP Gen 2
+          const batchValue = row[batchColumn];
+          row.batch = table === 'fct_all_results_atp_smarttrac_ultra_gen2' ? cleanGen2Batch(batchValue) : batchValue;
+
           row.test_date = row[dateColumn]; // Normaliza test_date
           row._testType = testType;
           row._tableName = table;
@@ -282,8 +320,8 @@ async function getDevicesByBatch(batchPrefix, res) {
     // Determinar deviceName para cada dispositivo após coletar TODOS os testes
     deviceMap.forEach((device, deviceId) => {
       if (device.atpData) {
-        // Prioridade 1: usar device_name do ATP
-        device.deviceName = device.atpData.device_name;
+        // Prioridade 1: usar device_name/type_ops do ATP
+        device.deviceName = inferDeviceTypeFromATP(device.atpData, device.atpData._tableName);
       } else if (device.itpData) {
         // Prioridade 2: usar ITP (independente se tem Leak ou não)
         // Se tem ITP de Gen 2 + Leak → será "Smart Trac Ultra Gen 2"
@@ -489,8 +527,8 @@ exports.getDevice = async (req, res) => {
     });
 
     if (atpData) {
-      // Prioridade 1: usar device_name do ATP
-      deviceName = atpData.device_name;
+      // Prioridade 1: usar device_name/type_ops do ATP
+      deviceName = inferDeviceTypeFromATP(atpData, atpData._tableName);
       deviceIdNormalized = atpData.device_id;
       batch = atpData.batch;
       console.log(`[DEBUG] Using ATP for device type: ${deviceName}`);
@@ -650,14 +688,20 @@ const DEVICE_FIELDS = {
 };
 
 function transformATP(data, deviceName) {
+  // Se for ATP Gen 2, usar função específica
+  if (data._tableName === 'fct_all_results_atp_smarttrac_ultra_gen2') {
+    return transformATP_Gen2(data);
+  }
+
+  // Para outros ATPs, usar DEVICE_FIELDS
   const fields = DEVICE_FIELDS[deviceName] || [];
   const params = [];
-  
+
   for (const { prefix, name, unit } of fields) {
     const valueField = `${prefix}_value`;
     const refField = `${prefix}_ref_mean`;
     const statusField = `${prefix}_status`;
-    
+
     if (data[valueField] != null) {
       params.push({
         name,
@@ -667,11 +711,89 @@ function transformATP(data, deviceName) {
       });
     }
   }
-  
+
   return {
     testName: 'ATP',
     testType: 'electrical',
     status: data.final_status === 'PASS' ? 'approved' : 'failed',
+    date: parseTestDate(data.test_date),
+    parameters: params
+  };
+}
+
+/**
+ * Transform ATP data for Smart Trac Ultra Gen 2
+ */
+function transformATP_Gen2(data) {
+  const params = [];
+
+  // Temperature
+  if (data.dut_temp != null) {
+    params.push({
+      name: 'Temperature',
+      measured: `${data.dut_temp} °C`,
+      expected: data.reference_temp != null ? `${data.reference_temp} °C` : undefined,
+      status: data.temperature_check_passed ? 'approved' : 'failed',
+      parameterType: 'temperature'
+    });
+  }
+
+  // Signal
+  if (data.dut_signal != null) {
+    params.push({
+      name: 'Signal',
+      measured: `${data.dut_signal} dB`,
+      expected: data.reference_signal != null ? `${data.reference_signal} dB` : undefined,
+      status: data.signal_check_passed ? 'approved' : 'failed',
+      parameterType: 'signal'
+    });
+  }
+
+  // Status Count
+  if (data.dut_status_count != null) {
+    params.push({
+      name: 'Status Count',
+      measured: `${data.dut_status_count}`,
+      expected: data.reference_status_count != null ? `${data.reference_status_count}` : undefined,
+      status: data.status_count_check_passed ? 'approved' : 'failed',
+      parameterType: 'system'
+    });
+  }
+
+  // Error Check
+  if (data.error_check_passed != null) {
+    params.push({
+      name: 'Error Check',
+      measured: data.error_check_passed ? 'PASS' : 'FAIL',
+      status: data.error_check_passed ? 'approved' : 'failed',
+      parameterType: 'system'
+    });
+  }
+
+  // Zero Signal Check
+  if (data.zero_signal_check_passed != null) {
+    params.push({
+      name: 'Zero Signal Check',
+      measured: data.zero_signal_check_passed ? 'PASS' : 'FAIL',
+      status: data.zero_signal_check_passed ? 'approved' : 'failed',
+      parameterType: 'system'
+    });
+  }
+
+  // References List (se disponível)
+  if (data.references_list) {
+    params.push({
+      name: 'References Used',
+      measured: data.references_list,
+      status: 'approved',
+      parameterType: 'info'
+    });
+  }
+
+  return {
+    testName: 'ATP',
+    testType: 'electrical',
+    status: data.overall_result === 'PASS' ? 'approved' : 'failed',
     date: parseTestDate(data.test_date),
     parameters: params
   };
