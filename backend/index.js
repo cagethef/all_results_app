@@ -44,10 +44,10 @@ const TABLES_CONFIG = [
 
   // ITP tables (ITP do Omni Trac tem nomes de colunas diferentes!)
   { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'batch_number' },
-  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_completed_at', batchColumn: 'batch' },
+  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_completed_at', batchColumn: 'workorder_title' },
 
   // Leak test
-  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'batch' }
+  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'workorder_title' }
 ];
 
 const DATASET = 'operations_dbt';
@@ -211,9 +211,10 @@ async function searchAllTables(deviceId) {
 
         rows[0].device_id = rows[0][idColumn]; // Normaliza device_id
 
-        // Limpar batch se for ATP Gen 2
+        // Limpar batch: ATP Gen 2 tem sufixo longo; workorder_title tem " - Lote..." depois do número
         const batchValue = rows[0][batchColumn];
-        rows[0].batch = table === 'fct_all_results_atp_smarttrac_ultra_gen2' ? cleanGen2Batch(batchValue) : batchValue;
+        rows[0].batch = (table === 'fct_all_results_atp_smarttrac_ultra_gen2' || batchColumn === 'workorder_title')
+          ? cleanGen2Batch(batchValue) : batchValue;
 
         rows[0].test_date = rows[0][dateColumn]; // Normaliza test_date
         rows[0]._testType = testType; // Adiciona tipo do teste
@@ -253,7 +254,7 @@ async function getDevicesByBatch(batchPrefix, res) {
       try {
         const [rows] = await bigquery.query({
           query,
-          params: { batchPattern: `${batchPrefix}%` },
+          params: { batchPattern: `%${batchPrefix}%` },
           useQueryCache: false
         });
 
@@ -261,9 +262,10 @@ async function getDevicesByBatch(batchPrefix, res) {
         rows.forEach(row => {
           row.device_id = row[idColumn]; // Normaliza device_id
 
-          // Limpar batch se for ATP Gen 2
+          // Limpar batch: ATP Gen 2 tem sufixo longo; workorder_title tem " - Lote..." depois do número
           const batchValue = row[batchColumn];
-          row.batch = table === 'fct_all_results_atp_smarttrac_ultra_gen2' ? cleanGen2Batch(batchValue) : batchValue;
+          row.batch = (table === 'fct_all_results_atp_smarttrac_ultra_gen2' || batchColumn === 'workorder_title')
+            ? cleanGen2Batch(batchValue) : batchValue;
 
           row.test_date = row[dateColumn]; // Normaliza test_date
           row._testType = testType;
@@ -1034,7 +1036,7 @@ function transformITP_SmartTracGen2(data) {
   const getStatus = (statusStr) => {
     if (!statusStr) return 'pending';
     const upper = String(statusStr).toUpperCase();
-    if (upper === 'PASSED' || upper === 'PASS' || upper === 'OK') return 'approved';
+    if (upper === 'PASSED' || upper === 'PASS' || upper === 'OK' || upper === 'SUCCESS' || upper === 'APPROVED') return 'approved';
     if (upper === 'FAILED' || upper === 'FAIL') return 'failed';
     return 'pending';
   };

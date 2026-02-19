@@ -8,7 +8,7 @@ import { useToast } from './hooks/useToast'
 
 function App() {
   const toast = useToast()
-  const { devices, addDevice, clearDevices, stats } = useDevices(toast)
+  const { devices, addAllDevices, addSingleDevice, clearDevices, stats, loading } = useDevices(toast)
 
   return (
     <div className="min-h-screen">
@@ -20,7 +20,11 @@ function App() {
         <StatsCards stats={stats} devices={devices} />
 
         {/* Scanner Section */}
-        <Scanner onDeviceAdded={addDevice} />
+        <Scanner
+          onAddAll={addAllDevices}
+          onSingleDevice={addSingleDevice}
+          loading={loading}
+        />
 
         {/* Results Table */}
         <DeviceTable devices={devices} onClearAll={clearDevices} />

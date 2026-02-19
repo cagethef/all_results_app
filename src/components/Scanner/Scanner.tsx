@@ -4,10 +4,12 @@ import { OCRScanner } from './OCRScanner'
 import { ZebraListener } from './ZebraListener'
 
 interface ScannerProps {
-  onDeviceAdded: (deviceId: string) => void
+  onAddAll: (batches: string[], ids: string[]) => void
+  onSingleDevice: (id: string) => void
+  loading: boolean
 }
 
-export function Scanner({ onDeviceAdded }: ScannerProps) {
+export function Scanner({ onAddAll, onSingleDevice, loading }: ScannerProps) {
   const [isOCRActive, setIsOCRActive] = useState(false)
 
   return (
@@ -16,20 +18,19 @@ export function Scanner({ onDeviceAdded }: ScannerProps) {
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Adicionar Dispositivos</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">Digite o ID, cole o link do QR Code ou use o scanner Zebra</p>
       </div>
-      
-      {/* Zebra Scanner always listening in background (unless OCR is active) */}
-      {!isOCRActive && <ZebraListener onDeviceAdded={onDeviceAdded} />}
 
-      {/* Unified Input or OCR Scanner */}
+      {!isOCRActive && <ZebraListener onDeviceAdded={onSingleDevice} />}
+
       {isOCRActive ? (
-        <OCRScanner 
-          onDeviceAdded={onDeviceAdded}
+        <OCRScanner
+          onDeviceAdded={onSingleDevice}
           onClose={() => setIsOCRActive(false)}
         />
       ) : (
-        <UnifiedInput 
-          onDeviceAdded={onDeviceAdded}
+        <UnifiedInput
+          onAddAll={onAddAll}
           onOpenOCR={() => setIsOCRActive(true)}
+          loading={loading}
         />
       )}
     </div>

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gcloud functions deploy:*)"
+      "Bash(gcloud functions deploy:*)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

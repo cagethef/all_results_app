@@ -81,7 +81,7 @@ export function TestContent({ test }: TestContentProps) {
         test.sections![activeTab].parameters.length > 0 ? (
           <ParameterTable
             parameters={test.sections![activeTab].parameters}
-            variant={test.sections![activeTab].name === 'Calibração' ? 'info' : 'default'}
+            variant={test.sections![activeTab].name === 'Calibração' ? 'info' : test.sections![activeTab].name === 'Vibration Tests' ? 'vibration' : 'default'}
             hideStatus={test.sections![activeTab].name === 'Calibração'}
           />
         ) : (
