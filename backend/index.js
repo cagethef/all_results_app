@@ -1173,7 +1173,9 @@ function transformITP_SmartTracGen2(data) {
   // Calcular status geral
   const allParams = [...setupParams, ...componentsParams, ...vibrationParams];
   const hasFailed = allParams.some(p => p.status === 'failed');
-  const overallStatus = data.final_result ? getStatus(data.final_result) : (hasFailed ? 'failed' : 'approved');
+  const finalResultStatus = data.final_result ? getStatus(data.final_result) : 'pending';
+  // Steps têm prioridade: se algum falhou, o ITP falhou — independente do final_result
+  const overallStatus = hasFailed ? 'failed' : finalResultStatus === 'approved' ? 'approved' : 'pending';
 
   return {
     testName: 'ITP',
