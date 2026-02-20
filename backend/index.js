@@ -180,7 +180,7 @@ async function fetchChipInfo(deviceId, config) {
     const [chipRows] = await bigquery.query({
       query: chipQuery,
       params: { deviceId: deviceId.toUpperCase() },
-      useQueryCache: false
+      useQueryCache: true
     });
 
     return chipRows[0] ? transformChipInfo(chipRows[0]) : null;
@@ -207,7 +207,7 @@ async function searchAllTables(deviceId) {
       const [rows] = await bigquery.query({
         query,
         params: { deviceId: deviceId.toUpperCase() },
-        useQueryCache: false
+        useQueryCache: true
       });
 
       if (rows.length > 0) {
@@ -263,7 +263,7 @@ async function getDevicesByBatch(batchPrefix, res) {
         const [rows] = await bigquery.query({
           query,
           params: { batchPattern: `%${batchPrefix}%` },
-          useQueryCache: false
+          useQueryCache: true
         });
 
         // Adiciona metadados para cada row
@@ -371,7 +371,7 @@ async function getDevicesByBatch(batchPrefix, res) {
         const [chipRows] = await bigquery.query({
           query: chipQuery,
           params: { deviceIds: deviceIdsNeedingChip },
-          useQueryCache: false
+          useQueryCache: true
         });
 
         // Criar mapa: deviceId -> chipInfo

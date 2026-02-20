@@ -3,6 +3,31 @@ import { Device } from '@/types'
 import { calculateDeviceStats } from '@/utils/deviceUtils'
 import { ENDPOINTS } from '@/config/api'
 
+// Runs fn over items with at most `concurrency` in-flight at once.
+// Returns results in the same order as items (like Promise.allSettled).
+async function allSettledConcurrent<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length)
+  let next = 0
+
+  async function worker() {
+    while (next < items.length) {
+      const i = next++
+      try {
+        results[i] = { status: 'fulfilled', value: await fn(items[i]) }
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason }
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+  return results
+}
+
 interface ToastFunctions {
   success: (message: string) => void
   error: (message: string) => void
@@ -43,7 +68,9 @@ export function useDevices(toast: ToastFunctions) {
     setError(null)
 
     try {
-      // Fetch batches and individual IDs all in parallel
+      // Fetch batches in parallel (usually just 1-2) and IDs with concurrency cap.
+      // Each ID triggers ~10 BigQuery queries on the backend; capping at 15 concurrent
+      // requests keeps the total under BigQuery's concurrent-job limit (~300).
       const [batchSettled, idSettled] = await Promise.all([
         Promise.allSettled(
           batches.map(async batch => {
@@ -52,13 +79,11 @@ export function useDevices(toast: ToastFunctions) {
             return res.json()
           })
         ),
-        Promise.allSettled(
-          ids.map(async id => {
-            const res = await fetch(ENDPOINTS.getDevice(id))
-            if (!res.ok) throw new Error(id)
-            return res.json() as Promise<Device>
-          })
-        )
+        allSettledConcurrent(ids, 15, async id => {
+          const res = await fetch(ENDPOINTS.getDevice(id))
+          if (!res.ok) throw new Error(id)
+          return res.json() as Device
+        })
       ])
 
       // Collect all found devices
