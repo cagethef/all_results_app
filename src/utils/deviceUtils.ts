@@ -3,6 +3,42 @@ import type { ChipInfo } from '@/types'
 import { TEST_NAMES, TEST_TYPES } from '@/constants/testNames'
 import { getMatchingPattern } from '@/constants/deviceIdPatterns'
 
+export interface FailedItem {
+  test: string
+  param: string
+}
+
+/**
+ * Retorna lista de parâmetros reprovados do dispositivo.
+ * Suporta tests com parameters[] e sections[].
+ */
+export function getFailedItems(device: Device): FailedItem[] {
+  const items: FailedItem[] = []
+
+  for (const test of device.tests) {
+    if (test.parameters && test.parameters.length > 0) {
+      for (const param of test.parameters) {
+        if (param.status === 'failed') {
+          items.push({ test: test.testName, param: param.name })
+        }
+      }
+    } else if (test.sections && test.sections.length > 0) {
+      for (const section of test.sections) {
+        for (const param of section.parameters) {
+          if (param.status === 'failed') {
+            items.push({ test: test.testName, param: param.name })
+          }
+        }
+      }
+    } else if (test.status === 'failed') {
+      // Teste reprovado sem parâmetros detalhados
+      items.push({ test: test.testName, param: 'Reprovado' })
+    }
+  }
+
+  return items
+}
+
 export function calculateDeviceStatus(tests: Test[]): TestStatus {
   if (tests.length === 0) return 'pending'
   

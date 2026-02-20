@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react'
 import { Device, TestStatus } from '@/types'
+import { getFailedItems } from '@/utils/deviceUtils'
 import { StatusIcon } from '../shared/StatusIcon'
 import { getDeviceIcon, getDeviceIconColor } from '@/utils/deviceIcons'
 
@@ -7,11 +8,12 @@ interface DeviceRowProps {
   device: Device
   testColumns: string[]
   hasChipColumn: boolean
+  hasReprovasColumn: boolean
   onClick: () => void
   index: number
 }
 
-export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, onClick, index }: DeviceRowProps) {
+export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasReprovasColumn, onClick, index }: DeviceRowProps) {
   // Create a map of test name to status for quick lookup
   const testStatusMap = useMemo(() => {
     const map = new Map<string, TestStatus>()
@@ -20,6 +22,9 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
     })
     return map
   }, [device.tests])
+
+  // Parâmetros reprovados deste dispositivo
+  const failedItems = useMemo(() => getFailedItems(device), [device])
 
   const DeviceIcon = getDeviceIcon(device.deviceType)
   const iconColors = getDeviceIconColor(device.deviceType)
@@ -117,6 +122,32 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
           {device.overallStatus === 'pending' && '⏳ Pendente'}
         </span>
       </td>
+      {/* Coluna REPROVAS */}
+      {hasReprovasColumn && (
+        <td className="px-6 py-5">
+          {failedItems.length === 0 ? (
+            <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {failedItems.slice(0, 3).map((item, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-danger-50 dark:bg-danger-900/20 text-danger-700 dark:text-danger-400 border border-danger-200 dark:border-danger-800 whitespace-nowrap"
+                >
+                  <span className="font-bold">{item.test}</span>
+                  <span className="text-danger-400 dark:text-danger-600">·</span>
+                  <span>{item.param}</span>
+                </span>
+              ))}
+              {failedItems.length > 3 && (
+                <span className="text-xs text-danger-500 dark:text-danger-400 font-medium pl-0.5">
+                  +{failedItems.length - 3} mais
+                </span>
+              )}
+            </div>
+          )}
+        </td>
+      )}
       <td className="px-6 py-5 whitespace-nowrap text-center">
         <button
           onClick={(e) => {

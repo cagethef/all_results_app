@@ -1,10 +1,48 @@
 import { useState, useCallback, useMemo } from 'react'
 import { Device } from '@/types'
+import { getFailedItems } from '@/utils/deviceUtils'
 import { DeviceRow } from './DeviceRow'
 import { DeviceModal } from '../DeviceModal/DeviceModal'
 import { FilterBar, Filters } from './FilterBar'
 import { FilterModal } from './FilterModal'
 import { ActiveFilterBadges } from './ActiveFilterBadges'
+
+type SortDirection = 'asc' | 'desc' | null
+type SortColumn = 'id' | 'overallStatus' | string // string para colunas de teste dinâmicas
+
+interface SortConfig {
+  column: SortColumn | null
+  direction: SortDirection
+}
+
+const STATUS_ORDER: Record<string, number> = {
+  approved: 0,
+  warning: 1,
+  pending: 2,
+  failed: 3
+}
+
+function SortIcon({ direction }: { direction: SortDirection }) {
+  if (!direction) {
+    return (
+      <svg className="w-3.5 h-3.5 text-gray-400 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    )
+  }
+  if (direction === 'asc') {
+    return (
+      <svg className="w-3.5 h-3.5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+      </svg>
+    )
+  }
+  return (
+    <svg className="w-3.5 h-3.5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
 
 interface DeviceTableProps {
   devices: Device[]
@@ -14,6 +52,7 @@ interface DeviceTableProps {
 export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [showFilterModal, setShowFilterModal] = useState(false)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null })
   const [filters, setFilters] = useState<Filters>({
     deviceType: 'all',
     connectivity: 'all',
@@ -178,6 +217,51 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     })
   }, [])
 
+  // Lógica de ordenação
+  const handleSort = useCallback((column: SortColumn) => {
+    setSortConfig(prev => {
+      if (prev.column !== column) {
+        return { column, direction: 'asc' }
+      }
+      if (prev.direction === 'asc') return { column, direction: 'desc' }
+      if (prev.direction === 'desc') return { column: null, direction: null }
+      return { column, direction: 'asc' }
+    })
+  }, [])
+
+  const sortedDevices = useMemo(() => {
+    if (!sortConfig.column || !sortConfig.direction) return filteredDevices
+
+    return [...filteredDevices].sort((a, b) => {
+      const { column, direction } = sortConfig
+      const multiplier = direction === 'asc' ? 1 : -1
+
+      if (column === 'id') {
+        return multiplier * a.id.localeCompare(b.id)
+      }
+
+      if (column === 'overallStatus') {
+        const orderA = STATUS_ORDER[a.overallStatus] ?? 99
+        const orderB = STATUS_ORDER[b.overallStatus] ?? 99
+        return multiplier * (orderA - orderB)
+      }
+
+      // Ordenar por quantidade de reprovas
+      if (column === 'reprovas') {
+        const countA = getFailedItems(a).length
+        const countB = getFailedItems(b).length
+        return multiplier * (countA - countB)
+      }
+
+      // Colunas de teste (ATP, ITP, Leak Test, etc.)
+      const testA = a.tests.find(t => t.testName === column)
+      const testB = b.tests.find(t => t.testName === column)
+      const orderA = testA ? (STATUS_ORDER[testA.status] ?? 99) : 100
+      const orderB = testB ? (STATUS_ORDER[testB.status] ?? 99) : 100
+      return multiplier * (orderA - orderB)
+    })
+  }, [filteredDevices, sortConfig])
+
   // Detect unique test columns from all devices (usar filteredDevices)
   const testColumns = useMemo(() => {
     const uniqueTests = new Set<string>()
@@ -192,6 +276,11 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   // Check if any device has chip info (usar filteredDevices)
   const hasChipColumn = useMemo(() => {
     return filteredDevices.some(device => device.chipInfo)
+  }, [filteredDevices])
+
+  // Mostrar coluna REPROVAS apenas se ao menos 1 dispositivo tiver parâmetros reprovados
+  const hasReprovasColumn = useMemo(() => {
+    return filteredDevices.some(device => getFailedItems(device).length > 0)
   }, [filteredDevices])
 
   // Memoize handlers to prevent re-creating functions
@@ -291,34 +380,69 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                    ID Dispositivo
+                  {/* ID Dispositivo - ordenável */}
+                  <th
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors group"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      ID Dispositivo
+                      <SortIcon direction={sortConfig.column === 'id' ? sortConfig.direction : null} />
+                    </div>
                   </th>
                   {hasChipColumn && (
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                       Conectividade
                     </th>
                   )}
+                  {/* Colunas de teste - ordenáveis */}
                   {testColumns.map(testName => (
-                    <th key={testName} className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      {testName}
+                    <th
+                      key={testName}
+                      className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                      onClick={() => handleSort(testName)}
+                    >
+                      <div className="flex items-center justify-center gap-1.5">
+                        {testName}
+                        <SortIcon direction={sortConfig.column === testName ? sortConfig.direction : null} />
+                      </div>
                     </th>
                   ))}
-                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                    Status Geral
+                  {/* Status Geral - ordenável */}
+                  <th
+                    className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                    onClick={() => handleSort('overallStatus')}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      Status Geral
+                      <SortIcon direction={sortConfig.column === 'overallStatus' ? sortConfig.direction : null} />
+                    </div>
                   </th>
+                  {/* Coluna REPROVAS - aparece só se tiver ao menos 1 reprovado */}
+                  {hasReprovasColumn && (
+                    <th
+                      className="px-6 py-4 text-left text-xs font-bold text-danger-600 dark:text-danger-400 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                      onClick={() => handleSort('reprovas')}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Reprovas
+                        <SortIcon direction={sortConfig.column === 'reprovas' ? sortConfig.direction : null} />
+                      </div>
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Ações
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredDevices.map((device, index) => (
+                {sortedDevices.map((device, index) => (
                   <DeviceRow
                     key={device.id}
                     device={device}
                     testColumns={testColumns}
                     hasChipColumn={hasChipColumn}
+                    hasReprovasColumn={hasReprovasColumn}
                     onClick={() => handleDeviceClick(device)}
                     index={index}
                   />

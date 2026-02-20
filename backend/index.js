@@ -52,6 +52,14 @@ const TABLES_CONFIG = [
 
 const DATASET = 'operations_dbt';
 
+// Formata número: |valor| < 1 → 4 casas decimais; |valor| >= 1 → 2 casas decimais
+function fmt4(value) {
+  if (value == null) return value;
+  const num = parseFloat(value);
+  if (isNaN(num)) return value;
+  return Math.abs(num) < 1 ? num.toFixed(4) : num.toFixed(2);
+}
+
 // Função auxiliar para converter test_date do BigQuery para ISO string
 function parseTestDate(testDate) {
   if (!testDate) return undefined;
@@ -1075,19 +1083,19 @@ function transformITP_SmartTracGen2(data) {
     },
     {
       name: 'Step 5: Humidity',
-      measured: data.step5_humidity_value != null ? `${data.step5_humidity_value} %` : 'N/A',
+      measured: data.step5_humidity_value != null ? `${fmt4(data.step5_humidity_value)} %` : 'N/A',
       status: data.step5_humidity_passed ? 'approved' : 'failed',
       parameterType: 'humidity'
     },
     {
       name: 'Step 5: Temperature',
-      measured: data.step5_temp_value != null ? `${data.step5_temp_value} °C` : 'N/A',
+      measured: data.step5_temp_value != null ? `${fmt4(data.step5_temp_value)} °C` : 'N/A',
       status: data.step5_temp_passed ? 'approved' : 'failed',
       parameterType: 'temperature'
     },
     {
       name: 'Step 5: MCU Temperature',
-      measured: data.step5_mcu_temp_value != null ? `${data.step5_mcu_temp_value} °C` : 'N/A',
+      measured: data.step5_mcu_temp_value != null ? `${fmt4(data.step5_mcu_temp_value)} °C` : 'N/A',
       status: data.step5_mcu_temp_passed ? 'approved' : 'failed',
       parameterType: 'temperature'
     },
@@ -1106,7 +1114,7 @@ function transformITP_SmartTracGen2(data) {
   if (data.step7_status) {
     vibrationParams.push({
       name: 'Step 7: RMS (X/Y/Z)',
-      measured: `${data.step7_rms_x || 'N/A'} / ${data.step7_rms_y || 'N/A'} / ${data.step7_rms_z || 'N/A'}`,
+      measured: `${data.step7_rms_x != null ? fmt4(data.step7_rms_x) : 'N/A'} / ${data.step7_rms_y != null ? fmt4(data.step7_rms_y) : 'N/A'} / ${data.step7_rms_z != null ? fmt4(data.step7_rms_z) : 'N/A'}`,
       status: getStatus(data.step7_validation_overall || data.step7_status),
       parameterType: 'vibration'
     });
@@ -1116,7 +1124,7 @@ function transformITP_SmartTracGen2(data) {
   if (data.step8_status) {
     vibrationParams.push({
       name: 'Step 8: RMS (X/Y/Z)',
-      measured: `${data.step8_rms_x || 'N/A'} / ${data.step8_rms_y || 'N/A'} / ${data.step8_rms_z || 'N/A'}`,
+      measured: `${data.step8_rms_x != null ? fmt4(data.step8_rms_x) : 'N/A'} / ${data.step8_rms_y != null ? fmt4(data.step8_rms_y) : 'N/A'} / ${data.step8_rms_z != null ? fmt4(data.step8_rms_z) : 'N/A'}`,
       status: getStatus(data.step8_validation_overall || data.step8_status),
       parameterType: 'vibration'
     });
@@ -1126,7 +1134,7 @@ function transformITP_SmartTracGen2(data) {
   if (data.step9_status) {
     vibrationParams.push({
       name: 'Step 9: RMS',
-      measured: data.step9_rms != null ? `${data.step9_rms}` : 'N/A',
+      measured: data.step9_rms != null ? `${fmt4(data.step9_rms)}` : 'N/A',
       status: getStatus(data.step9_validation_overall || data.step9_status),
       parameterType: 'vibration'
     });
@@ -1136,14 +1144,14 @@ function transformITP_SmartTracGen2(data) {
   if (data.step10_status) {
     vibrationParams.push({
       name: 'Step 10: RMS (X/Y/Z)',
-      measured: `${data.step10_rms_x || 'N/A'} / ${data.step10_rms_y || 'N/A'} / ${data.step10_rms_z || 'N/A'}`,
+      measured: `${data.step10_rms_x != null ? fmt4(data.step10_rms_x) : 'N/A'} / ${data.step10_rms_y != null ? fmt4(data.step10_rms_y) : 'N/A'} / ${data.step10_rms_z != null ? fmt4(data.step10_rms_z) : 'N/A'}`,
       status: getStatus(data.step10_validation_overall || data.step10_status),
       parameterType: 'vibration'
     });
     if (data.step10_frf_score != null) {
       vibrationParams.push({
         name: 'Step 10: FRF Score',
-        measured: `${data.step10_frf_score}`,
+        measured: `${fmt4(data.step10_frf_score)}`,
         status: getStatus(data.step10_validation_overall || data.step10_status),
         parameterType: 'vibration'
       });
@@ -1154,7 +1162,7 @@ function transformITP_SmartTracGen2(data) {
   if (data.step11_status) {
     vibrationParams.push({
       name: 'Step 11: RMS (X/Y/Z)',
-      measured: `${data.step11_rms_x || 'N/A'} / ${data.step11_rms_y || 'N/A'} / ${data.step11_rms_z || 'N/A'}`,
+      measured: `${data.step11_rms_x != null ? fmt4(data.step11_rms_x) : 'N/A'} / ${data.step11_rms_y != null ? fmt4(data.step11_rms_y) : 'N/A'} / ${data.step11_rms_z != null ? fmt4(data.step11_rms_z) : 'N/A'}`,
       status: getStatus(data.step11_validation_overall || data.step11_status),
       parameterType: 'vibration'
     });
@@ -1164,7 +1172,7 @@ function transformITP_SmartTracGen2(data) {
   if (data.step12_status) {
     vibrationParams.push({
       name: 'Step 12: RMS',
-      measured: data.step12_rms != null ? `${data.step12_rms}` : 'N/A',
+      measured: data.step12_rms != null ? `${fmt4(data.step12_rms)}` : 'N/A',
       status: getStatus(data.step12_validation_overall || data.step12_status),
       parameterType: 'vibration'
     });
@@ -1204,17 +1212,17 @@ function transformLeak(data) {
   const leakTestParams = [
     {
       name: 'Drop',
-      measured: `${data.test_drop} Pa/min`,
+      measured: `${fmt4(data.test_drop)} Pa/min`,
       status: data.result_drop_pass ? 'approved' : 'failed'
     },
     {
       name: 'Slope',
-      measured: `${data.test_slope}`,
+      measured: `${fmt4(data.test_slope)}`,
       status: data.result_slope_pass ? 'approved' : 'failed'
     },
     {
       name: 'R² (Fit Quality)',
-      measured: `${data.test_r2}`,
+      measured: `${fmt4(data.test_r2)}`,
       status: data.result_r2_pass ? 'approved' : 'failed'
     }
   ];
@@ -1233,17 +1241,17 @@ function transformLeak(data) {
     },
     {
       name: 'Drop de Referência',
-      measured: `${data.calib_mean_drop} Pa/min`,
+      measured: `${fmt4(data.calib_mean_drop)} Pa/min`,
       status: 'approved'
     },
     {
       name: 'Slope de Referência',
-      measured: `${data.calib_mean_slope}`,
+      measured: `${fmt4(data.calib_mean_slope)}`,
       status: 'approved'
     },
     {
       name: 'R² de Referência',
-      measured: `${data.calib_mean_fit_qual}`,
+      measured: `${fmt4(data.calib_mean_fit_qual)}`,
       status: 'approved'
     }
   ];
