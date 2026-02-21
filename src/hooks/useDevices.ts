@@ -82,7 +82,7 @@ export function useDevices(toast: ToastFunctions) {
         allSettledConcurrent(ids, 15, async id => {
           const res = await fetch(ENDPOINTS.getDevice(id))
           if (!res.ok) throw new Error(id)
-          return res.json() as Device
+          return (await res.json()) as Device
         })
       ])
 
