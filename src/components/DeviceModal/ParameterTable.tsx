@@ -6,6 +6,7 @@ interface ParameterTableProps {
   parameters: Parameter[]
   variant?: 'default' | 'info' | 'vibration'
   hideStatus?: boolean
+  hideExpected?: boolean
 }
 
 function parseVibrationAxes(measured?: string): { x: string | null; y: string | null; z: string | null } {
@@ -21,7 +22,7 @@ function parseVibrationAxes(measured?: string): { x: string | null; y: string | 
   return { x: parseFloat(measured).toFixed(4), y: null, z: null }
 }
 
-export function ParameterTable({ parameters, variant = 'default', hideStatus = false }: ParameterTableProps) {
+export function ParameterTable({ parameters, variant = 'default', hideStatus = false, hideExpected = false }: ParameterTableProps) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
       <table className="min-w-full">
@@ -59,9 +60,11 @@ export function ParameterTable({ parameters, variant = 'default', hideStatus = f
               </th>
               {variant === 'default' ? (
                 <>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                    Referência
-                  </th>
+                  {!hideExpected && (
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Referência
+                    </th>
+                  )}
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Medido
                   </th>
@@ -98,19 +101,21 @@ export function ParameterTable({ parameters, variant = 'default', hideStatus = f
 
                 {variant === 'default' ? (
                   <>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                        {param.parameterType === 'info' ? (
-                          <span className="text-gray-400 dark:text-gray-600" />
-                        ) : param.expected !== undefined ? (
-                          <>
-                            {param.expected} <span className="text-gray-500 dark:text-gray-500">{param.unit}</span>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 dark:text-gray-600">-</span>
-                        )}
-                      </span>
-                    </td>
+                    {!hideExpected && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                          {param.parameterType === 'info' ? (
+                            <span className="text-gray-400 dark:text-gray-600" />
+                          ) : param.expected !== undefined ? (
+                            <>
+                              {param.expected} <span className="text-gray-500 dark:text-gray-500">{param.unit}</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-600">-</span>
+                          )}
+                        </span>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900 dark:text-white font-bold">
                         {param.measured !== undefined ? (

@@ -83,6 +83,7 @@ export function TestContent({ test }: TestContentProps) {
             parameters={test.sections![activeTab].parameters}
             variant={test.sections![activeTab].name === 'Calibração' ? 'info' : test.sections![activeTab].name === 'Vibration Tests' ? 'vibration' : 'default'}
             hideStatus={test.sections![activeTab].name === 'Calibração'}
+            hideExpected={test.testType === 'leak' && test.sections![activeTab].name === 'Leak Test'}
           />
         ) : (
           <div className="text-center py-12 bg-white dark:bg-[#141414] rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">

@@ -34,13 +34,15 @@ export function UnifiedInput({ onAddAll, onOpenOCR, loading }: UnifiedInputProps
 
       if (qrResult.isValid && qrResult.deviceId) {
         ids.push(qrResult.deviceId)
+      } else if (/^#\d{5}$/.test(entry)) {
+        batches.push(entry)
       } else if (/^#?\d{8}_\d{2}$/.test(entry)) {
         batches.push(entry)
       } else if (/^[A-Z0-9]{5,10}$/i.test(entry)) {
         ids.push(entry.toUpperCase())
       } else {
         hasInvalid = true
-        alert(`Formato inválido: "${entry}"\n\nFormatos aceitos:\n- ID: YL250QZ (5-10 caracteres)\n- Lote: 20250523_04 ou #20250523_04`)
+        alert(`Formato inválido: "${entry}"\n\nFormatos aceitos:\n- ID: YL250QZ (5-10 caracteres)\n- Lote: 20250523_04 ou #20250523_04\n- Workorder: #44124`)
       }
     })
 
@@ -60,7 +62,7 @@ export function UnifiedInput({ onAddAll, onOpenOCR, loading }: UnifiedInputProps
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
-          placeholder="Digite IDs ou lote (ex: #20250523_04) separados por vírgula..."
+          placeholder="IDs, lote (ex: #20250523_04) ou workorder (ex: #44124) separados por vírgula..."
           className="w-full px-4 py-2.5 bg-white dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>

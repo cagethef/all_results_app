@@ -3,12 +3,23 @@ import { Scanner } from './components/Scanner/Scanner'
 import { Header } from './components/Layout/Header'
 import { StatsCards } from './components/Layout/StatsCards'
 import { ToastContainer } from './components/Toast/ToastContainer'
+import { WorkorderSelectModal } from './components/Scanner/WorkorderSelectModal'
 import { useDevices } from './hooks/useDevices'
 import { useToast } from './hooks/useToast'
 
 function App() {
   const toast = useToast()
-  const { devices, addAllDevices, addSingleDevice, clearDevices, stats, loading } = useDevices(toast)
+  const {
+    devices,
+    addAllDevices,
+    addSingleDevice,
+    clearDevices,
+    stats,
+    loading,
+    pendingDisambiguation,
+    resolveDisambiguation,
+    cancelDisambiguation,
+  } = useDevices(toast)
 
   return (
     <div className="min-h-screen">
@@ -32,6 +43,15 @@ function App() {
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
+
+      {/* Workorder Disambiguation Modal */}
+      {pendingDisambiguation && (
+        <WorkorderSelectModal
+          disambiguation={pendingDisambiguation}
+          onConfirm={resolveDisambiguation}
+          onCancel={cancelDisambiguation}
+        />
+      )}
     </div>
   )
 }

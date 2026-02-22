@@ -3,6 +3,17 @@ import { Device } from '@/types'
 import { calculateDeviceStats } from '@/utils/deviceUtils'
 import { ENDPOINTS } from '@/config/api'
 
+export interface WorkorderOption {
+  number: number
+  title: string | null
+  count: number
+}
+
+export interface DisambiguationState {
+  batch: string
+  workorders: WorkorderOption[]
+}
+
 // Runs fn over items with at most `concurrency` in-flight at once.
 // Returns results in the same order as items (like Promise.allSettled).
 async function allSettledConcurrent<T, R>(
@@ -37,6 +48,7 @@ export function useDevices(toast: ToastFunctions) {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [disambiguationQueue, setDisambiguationQueue] = useState<DisambiguationState[]>([])
 
   // Accumulator for Zebra/OCR single scans (debounced — unknown total upfront)
   const singleAccRef = useRef<{
@@ -89,11 +101,14 @@ export function useDevices(toast: ToastFunctions) {
       // Collect all found devices
       const allFound: Device[] = []
       const notFound: string[] = []
+      const newDisambiguations: DisambiguationState[] = []
 
       batchSettled.forEach((result, i) => {
         if (result.status === 'fulfilled') {
           const data = result.value
-          if (data.devices && Array.isArray(data.devices)) {
+          if (data.needsDisambiguation) {
+            newDisambiguations.push({ batch: data.batch, workorders: data.workorders })
+          } else if (data.devices && Array.isArray(data.devices)) {
             allFound.push(...data.devices)
           } else if (data.id) {
             allFound.push(data as Device)
@@ -140,6 +155,11 @@ export function useDevices(toast: ToastFunctions) {
       // Individual error toasts for not found IDs
       notFound.forEach(id => toast.error(`ID ${id} não encontrado`))
 
+      // Queue disambiguation modals (shown one at a time)
+      if (newDisambiguations.length > 0) {
+        setDisambiguationQueue(prev => [...prev, ...newDisambiguations])
+      }
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
       setError(msg)
@@ -165,6 +185,12 @@ export function useDevices(toast: ToastFunctions) {
       }
 
       const data = await res.json()
+
+      // Batch with multiple workorders — needs disambiguation
+      if (data.needsDisambiguation) {
+        setDisambiguationQueue(prev => [...prev, { batch: data.batch, workorders: data.workorders }])
+        return
+      }
 
       // Batch result via single scan (e.g. Zebra scans a batch barcode)
       if (data.devices && Array.isArray(data.devices)) {
@@ -200,6 +226,16 @@ export function useDevices(toast: ToastFunctions) {
     }
   }, [devices, toast, scheduleSingleToast])
 
+  const resolveDisambiguation = useCallback(async (workorderNumbers: number[]) => {
+    setDisambiguationQueue(prev => prev.slice(1))
+    const tokens = workorderNumbers.map(n => `#${String(n).padStart(5, '0')}`)
+    await addAllDevices(tokens, [])
+  }, [addAllDevices])
+
+  const cancelDisambiguation = useCallback(() => {
+    setDisambiguationQueue(prev => prev.slice(1))
+  }, [])
+
   const removeDevice = useCallback((deviceId: string) => {
     setDevices(prev => prev.filter(d => d.id !== deviceId))
   }, [])
@@ -219,5 +255,8 @@ export function useDevices(toast: ToastFunctions) {
     stats,
     loading,
     error,
+    pendingDisambiguation: disambiguationQueue[0] ?? null,
+    resolveDisambiguation,
+    cancelDisambiguation,
   }
 }
