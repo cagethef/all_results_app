@@ -20,7 +20,7 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
   const iconColors = getDeviceIconColor(device.deviceType)
   
   // Extrair prefixo do lote (YYYYMMDD_XX)
-  const batchPrefix = device.batch ? device.batch.match(/^(\d{8}_\d{2})/)?.[1] : null
+  const batchPrefix = device.batch ? device.batch.match(/^#?(\d{8}_\d{2})/)?.[1] : null
 
   return (
     <div 
