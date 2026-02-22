@@ -1,10 +1,8 @@
-// Core types for the application
-
 export type TestStatus = 'approved' | 'failed' | 'pending' | 'warning'
 
 export interface Parameter {
   name: string
-  parameterType?: string // For icon mapping: "voltage", "temperature", etc
+  parameterType?: string
   expected?: string | number
   measured?: string | number
   unit?: string
@@ -19,13 +17,13 @@ export interface Section {
 
 export interface Test {
   testName: string
-  testType: string // For icons: "electrical", "mechanical", "leak", etc
+  testType: string
   status: TestStatus
   date?: string
   responsible?: string
   observations?: string
-  parameters?: Parameter[] // Legacy: usado quando não há sections
-  sections?: Section[] // Novo: para testes com múltiplas abas (ex: Leak Test + Calibração)
+  parameters?: Parameter[]
+  sections?: Section[]
 }
 
 export interface ChipInfo {
@@ -42,14 +40,13 @@ export interface ChipInfo {
 
 export interface Device {
   id: string
-  deviceType: string // "Omni Trac", "Smart Trac Ultra", "Energy Trac", etc
+  deviceType: string
   overallStatus: TestStatus
   tests: Test[]
   chipInfo?: ChipInfo
-  batch?: string // Batch ID (e.g., "20250523_04_01_CLARO")
+  batch?: string
 }
 
-// QR Code parsing
 export interface QRCodeResult {
   rawText: string
   deviceId: string | null

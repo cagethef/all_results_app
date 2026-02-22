@@ -8,16 +8,8 @@ interface StatusIconProps {
 }
 
 export const StatusIcon = memo(function StatusIcon({ status, size = 24 }: StatusIconProps) {
-  switch (status) {
-    case 'approved':
-      return <CheckCircle2 className="text-green-500" size={size} />
-    case 'failed':
-      return <XCircle className="text-red-500" size={size} />
-    case 'warning':
-      return <AlertTriangle className="text-yellow-500" size={size} />
-    case 'pending':
-      return <Clock className="text-gray-400" size={size} />
-    default:
-      return <Clock className="text-gray-400" size={size} />
-  }
+  if (status === 'approved') return <CheckCircle2 className="text-green-500" size={size} />
+  if (status === 'failed') return <XCircle className="text-red-500" size={size} />
+  if (status === 'warning') return <AlertTriangle className="text-yellow-500" size={size} />
+  return <Clock className="text-gray-400" size={size} />
 })

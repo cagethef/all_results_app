@@ -31,7 +31,6 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
         className="bg-white dark:bg-[#141414] rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 ${iconColors.bg} rounded-lg flex items-center justify-center`}>
@@ -70,13 +69,10 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
           </button>
         </div>
 
-        {/* Tabs */}
         {device.tests.length > 0 || device.chipInfo ? (
           <>
-            {/* Combined Tabs: Tests + Chips */}
             <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141414] px-6">
               <div className="flex gap-1 overflow-x-auto">
-                {/* Test Tabs */}
                 {device.tests.map((test, index) => {
                   const isActive = !showChips && index === activeTestIndex
                   return (
@@ -103,7 +99,6 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
                   )
                 })}
 
-                {/* Chip Info Tab */}
                 {device.chipInfo && (
                   <button
                     onClick={() => setShowChips(true)}
@@ -123,7 +118,6 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
               </div>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-[#0a0a0a]">
               {showChips && device.chipInfo ? (
                 <ChipContent chipInfo={device.chipInfo} />
@@ -152,7 +146,6 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
           </div>
         )}
 
-        {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141414]">
           <div className="flex gap-3">
             {!showChips && (

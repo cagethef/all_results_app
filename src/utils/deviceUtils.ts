@@ -12,17 +12,33 @@ export interface FailedItem {
  * Retorna lista de parâmetros reprovados do dispositivo.
  * Suporta tests com parameters[] e sections[].
  */
+const ITP_BLOCKING_STEPS = ['Step 3: BLE Discovery', 'Step 4: Components Check']
+
+function getBlockingItpFailures(params: Parameter[]): FailedItem[] | null {
+  const blocking = params.filter(p => p.status === 'failed' && ITP_BLOCKING_STEPS.includes(p.name))
+  return blocking.length > 0 ? blocking.map(p => ({ test: 'ITP', param: p.name })) : null
+}
+
 export function getFailedItems(device: Device): FailedItem[] {
   const items: FailedItem[] = []
 
   for (const test of device.tests) {
     if (test.parameters && test.parameters.length > 0) {
+      if (test.testName === 'ITP') {
+        const blocking = getBlockingItpFailures(test.parameters)
+        if (blocking) { items.push(...blocking); continue }
+      }
       for (const param of test.parameters) {
         if (param.status === 'failed') {
           items.push({ test: test.testName, param: param.name })
         }
       }
     } else if (test.sections && test.sections.length > 0) {
+      if (test.testName === 'ITP') {
+        const allParams = test.sections.flatMap(s => s.parameters)
+        const blocking = getBlockingItpFailures(allParams)
+        if (blocking) { items.push(...blocking); continue }
+      }
       for (const section of test.sections) {
         for (const param of section.parameters) {
           if (param.status === 'failed') {
@@ -31,7 +47,6 @@ export function getFailedItems(device: Device): FailedItem[] {
         }
       }
     } else if (test.status === 'failed') {
-      // Teste reprovado sem parâmetros detalhados
       items.push({ test: test.testName, param: 'Reprovado' })
     }
   }

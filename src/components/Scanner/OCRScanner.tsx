@@ -23,16 +23,9 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
   const [cameraReady, setCameraReady] = useState(false)
   const [foundIds, setFoundIds] = useState<Array<{ id: string; confidence: number }>>([])
 
-  // Start camera on mount
   useEffect(() => {
-    startCamera().then(success => {
-      setCameraReady(success)
-    })
-
-    // Cleanup on unmount
-    return () => {
-      stopCamera()
-    }
+    startCamera().then(setCameraReady)
+    return () => stopCamera()
   }, [startCamera, stopCamera])
 
   const handleCapture = async () => {
@@ -45,7 +38,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
       await onDeviceAdded(id)
       resetCapture()
       setFoundIds([])
-      // Reconnect camera stream after adding ID
       setTimeout(() => {
         if (videoRef.current && streamRef.current) {
           videoRef.current.srcObject = streamRef.current
@@ -56,14 +48,12 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
       }, 100)
     } catch (error) {
       console.error('Error adding device:', error)
-      // Don't reset on error, let user try again
     }
   }
 
   const handleRetry = () => {
     resetCapture()
     setFoundIds([])
-    // Ensure video stream is connected
     setTimeout(() => {
       if (videoRef.current && streamRef.current) {
         videoRef.current.srcObject = streamRef.current
@@ -81,7 +71,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Camera size={20} className="text-blue-600 dark:text-blue-400" />
@@ -96,7 +85,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
         </button>
       </div>
 
-      {/* Camera View or Captured Image */}
       <div className="relative bg-black rounded-xl overflow-hidden" style={{ aspectRatio: '4/3', maxHeight: '400px' }}>
         {!capturedImage ? (
           <>
@@ -112,7 +100,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
                 <Loader2 className="animate-spin text-white" size={32} />
               </div>
             )}
-            {/* Overlay guide */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="border-2 border-green-400 border-dashed rounded-lg w-2/3 h-2/5 flex flex-col items-center justify-center gap-1 bg-black/20">
                 <p className="text-white text-xs bg-black/60 px-2 py-1 rounded font-medium">
@@ -129,7 +116,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
         )}
       </div>
 
-      {/* Controls */}
       {!capturedImage ? (
         <button
           onClick={handleCapture}
@@ -150,7 +136,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
         </button>
       ) : (
         <div className="space-y-3">
-          {/* Found IDs */}
           {foundIds.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
@@ -186,7 +171,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
             </div>
           )}
 
-          {/* Error message */}
           {error && (
             <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <AlertCircle size={16} className="text-red-600 dark:text-red-400 mt-0.5" />
@@ -194,7 +178,6 @@ export function OCRScanner({ onDeviceAdded, onClose }: OCRScannerProps) {
             </div>
           )}
 
-          {/* Retry button */}
           <button
             onClick={handleRetry}
             className="w-full px-6 py-2.5 bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-[#202020] transition-colors font-medium"

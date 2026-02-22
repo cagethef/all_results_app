@@ -50,13 +50,11 @@ function FilterCard({ icon, label, isSelected, onClick }: FilterCardProps) {
 }
 
 export function FilterModal({ devices, filters, onFiltersChange, onClose }: FilterModalProps) {
-  // Detectar tipos de dispositivos disponíveis
   const deviceTypes = useMemo(() => {
     const types = new Set(devices.map(d => d.deviceType))
     return Array.from(types).sort()
   }, [devices])
 
-  // Detectar operadoras disponíveis
   const carriers = useMemo(() => {
     const carrierSet = new Set<string>()
     devices.forEach(device => {
@@ -70,7 +68,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
     return Array.from(carrierSet).sort()
   }, [devices])
 
-  // Detectar testes disponíveis
   const testNames = useMemo(() => {
     const tests = new Set<string>()
     devices.forEach(device => {
@@ -79,7 +76,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
     return Array.from(tests).sort()
   }, [devices])
 
-  // Detectar tipos de conectividade disponíveis
   const availableConnectivity = useMemo(() => {
     const connectivity = new Set<string>()
     devices.forEach(device => {
@@ -96,7 +92,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
     return connectivity
   }, [devices])
 
-  // Detectar status gerais disponíveis
   const availableOverallStatus = useMemo(() => {
     const statuses = new Set<string>()
     devices.forEach(device => {
@@ -105,7 +100,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
     return statuses
   }, [devices])
 
-  // Ícones para tipos de dispositivo
   const getDeviceTypeIcon = (type: string) => {
     if (type.includes('Trac')) return <Cpu size={24} />
     if (type.includes('Receiver')) return <Wifi size={24} />
@@ -121,7 +115,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
         className="bg-white dark:bg-[#141414] rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
@@ -145,10 +138,7 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          {/* Tipo de Dispositivo */}
           {deviceTypes.length > 0 && (
             <div>
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -175,7 +165,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
             </div>
           )}
 
-          {/* Conectividade */}
           {availableConnectivity.size > 0 && (
             <div>
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -225,7 +214,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
             </div>
           )}
 
-          {/* Operadora */}
           {carriers.length > 0 && (
             <div>
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -252,7 +240,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
             </div>
           )}
 
-          {/* Status por Teste */}
           {testNames.length > 0 && (
             <div>
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -283,7 +270,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                 ))}
               </div>
 
-              {/* Status do teste selecionado */}
               {filters.testStatus.testName !== 'all' && (
                 <div className="mt-4 pl-4 border-l-4 border-primary-500 bg-primary-50 dark:bg-primary-900/10 p-4 rounded-r-lg">
                   <h4 className="text-xs font-semibold text-primary-700 dark:text-primary-300 mb-3">
@@ -332,7 +318,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
             </div>
           )}
 
-          {/* Status Geral */}
           <div>
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
               <CheckCircle2 size={16} />
@@ -381,7 +366,6 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between p-5 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0a0a0a]">
           <button
             onClick={() => onFiltersChange({

@@ -67,7 +67,6 @@ export function useOCR() {
       const imageData = canvasVariants[0].toDataURL('image/png')
       setCapturedImage(imageData)
 
-      // Try OCR on each variant and collect results
       const allResults: Array<{ ids: string[], confidence: number, variant: number }> = []
 
       for (let i = 0; i < canvasVariants.length; i++) {
@@ -104,7 +103,6 @@ export function useOCR() {
 
       allResults.sort((a, b) => b.confidence - a.confidence)
       
-      // Collect all unique IDs with their best confidence
       const idConfidenceMap = new Map<string, number>()
       allResults.forEach(result => {
         result.ids.forEach(id => {
@@ -156,9 +154,6 @@ export function useOCR() {
     }
   }, [])
 
-  /**
-   * Reset captured image
-   */
   const resetCapture = useCallback(() => {
     setCapturedImage(null)
     setError(null)

@@ -5,10 +5,6 @@ interface ZebraListenerProps {
   onDeviceAdded: (deviceId: string) => void | Promise<void>
 }
 
-/**
- * Background listener for Zebra scanner
- * Captures keyboard events and automatically processes QR codes
- */
 export function ZebraListener({ onDeviceAdded }: ZebraListenerProps) {
   const [lastScanned, setLastScanned] = useState<string>('')
   const [scanTime, setScanTime] = useState<Date | null>(null)
@@ -51,7 +47,6 @@ export function ZebraListener({ onDeviceAdded }: ZebraListenerProps) {
     }
   }, [onDeviceAdded])
 
-  // Show last scanned notification (fades after 2 seconds)
   if (!lastScanned || !scanTime) return null
 
   const timeDiff = Date.now() - scanTime.getTime()

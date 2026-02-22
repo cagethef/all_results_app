@@ -50,7 +50,7 @@ export function useDevices(toast: ToastFunctions) {
   const [error, setError] = useState<string | null>(null)
   const [disambiguationQueue, setDisambiguationQueue] = useState<DisambiguationState[]>([])
 
-  // Accumulator for Zebra/OCR single scans (debounced — unknown total upfront)
+  // debounce para consolidar scans rápidos do Zebra em 1 toast
   const singleAccRef = useRef<{
     added: number
     timer: ReturnType<typeof setTimeout> | null
@@ -68,11 +68,6 @@ export function useDevices(toast: ToastFunctions) {
     }, 500)
   }, [toast])
 
-  /**
-   * Add all devices from a typed/pasted submission (batches + plain IDs) in parallel.
-   * Knows the total upfront — shows 1 consolidated toast when ALL results arrive.
-   * Used by UnifiedInput.
-   */
   const addAllDevices = useCallback(async (batches: string[], ids: string[]) => {
     if (batches.length === 0 && ids.length === 0) return
 
@@ -98,7 +93,6 @@ export function useDevices(toast: ToastFunctions) {
         })
       ])
 
-      // Collect all found devices
       const allFound: Device[] = []
       const notFound: string[] = []
       const newDisambiguations: DisambiguationState[] = []
@@ -126,7 +120,6 @@ export function useDevices(toast: ToastFunctions) {
         }
       })
 
-      // Deduplicate (within results and against existing devices)
       const existingIds = new Set(devices.map(d => d.id))
       const seenInBatch = new Set<string>()
       const newDevices = allFound.filter(d => {
@@ -140,7 +133,6 @@ export function useDevices(toast: ToastFunctions) {
         setDevices(prev => [...prev, ...newDevices])
       }
 
-      // Single consolidated toast
       if (newDevices.length > 0) {
         let msg = newDevices.length === 1
           ? '1 dispositivo adicionado'
@@ -152,10 +144,8 @@ export function useDevices(toast: ToastFunctions) {
         toast.success('Todos os dispositivos já estão na lista')
       }
 
-      // Individual error toasts for not found IDs
       notFound.forEach(id => toast.error(`ID ${id} não encontrado`))
 
-      // Queue disambiguation modals (shown one at a time)
       if (newDisambiguations.length > 0) {
         setDisambiguationQueue(prev => [...prev, ...newDisambiguations])
       }
@@ -169,10 +159,6 @@ export function useDevices(toast: ToastFunctions) {
     }
   }, [devices, toast])
 
-  /**
-   * Add a single device by ID (Zebra scanner / OCR — one at a time).
-   * Uses a debounced accumulator to consolidate rapid sequential scans into 1 toast.
-   */
   const addSingleDevice = useCallback(async (input: string) => {
     setLoading(true)
     setError(null)
@@ -186,13 +172,11 @@ export function useDevices(toast: ToastFunctions) {
 
       const data = await res.json()
 
-      // Batch with multiple workorders — needs disambiguation
       if (data.needsDisambiguation) {
         setDisambiguationQueue(prev => [...prev, { batch: data.batch, workorders: data.workorders }])
         return
       }
 
-      // Batch result via single scan (e.g. Zebra scans a batch barcode)
       if (data.devices && Array.isArray(data.devices)) {
         setDevices(prev => {
           const existingIds = new Set(prev.map(d => d.id))

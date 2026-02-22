@@ -181,7 +181,7 @@ export function ParameterTable({ parameters, variant = 'default', hideStatus = f
                               : 'text-gray-600'
                           }`}
                         >
-                          {param.status === 'approved' && 'APROVADO'}
+                          {param.status === 'approved' && 'Aprovado'}
                           {param.status === 'failed' && 'Reprovado'}
                           {param.status === 'warning' && 'Tolerável'}
                           {param.status === 'pending' && 'Pendente'}

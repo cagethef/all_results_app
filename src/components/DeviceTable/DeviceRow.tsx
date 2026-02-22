@@ -25,7 +25,6 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
     return map
   }, [device.tests])
 
-  // Parâmetros reprovados deste dispositivo
   const failedItems = useMemo(() => getFailedItems(device), [device])
 
   const DeviceIcon = getDeviceIcon(device.deviceType)
@@ -132,7 +131,6 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
           {device.overallStatus === 'pending' && '⏳ Pendente'}
         </span>
       </td>
-      {/* Coluna REPROVAS */}
       {hasReprovasColumn && (
         <td className="px-6 py-5">
           {failedItems.length === 0 ? (

@@ -67,15 +67,10 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     overallStatus: 'all'
   })
 
-  // Filtrar dispositivos
   const filteredDevices = useMemo(() => {
     return devices.filter(device => {
-      // Filtro por tipo de dispositivo
-      if (filters.deviceType !== 'all' && device.deviceType !== filters.deviceType) {
-        return false
-      }
+      if (filters.deviceType !== 'all' && device.deviceType !== filters.deviceType) return false
 
-      // Filtro por conectividade
       if (filters.connectivity !== 'all') {
         if (filters.connectivity === 'none' && device.chipInfo) return false
         if (filters.connectivity === 'single' && device.chipInfo?.type !== 'Single Chip') return false
@@ -83,7 +78,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         if (filters.connectivity === 'unidentified' && device.chipInfo?.type !== 'Não Identificado') return false
       }
 
-      // Filtro por operadora (busca em chip1 E chip2)
       if (filters.carrier !== 'all') {
         const hasCarrier =
           device.chipInfo?.chip1.carrier === filters.carrier ||
@@ -91,25 +85,18 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         if (!hasCarrier) return false
       }
 
-      // Filtro por status de teste específico
       if (filters.testStatus.testName !== 'all') {
         const test = device.tests.find(t => t.testName === filters.testStatus.testName)
         if (!test) return false
-        if (filters.testStatus.status !== 'all' && test.status !== filters.testStatus.status) {
-          return false
-        }
+        if (filters.testStatus.status !== 'all' && test.status !== filters.testStatus.status) return false
       }
 
-      // Filtro por status geral
-      if (filters.overallStatus !== 'all' && device.overallStatus !== filters.overallStatus) {
-        return false
-      }
+      if (filters.overallStatus !== 'all' && device.overallStatus !== filters.overallStatus) return false
 
       return true
     })
   }, [devices, filters])
 
-  // Contador inteligente
   const stats = useMemo(() => {
     return {
       total: devices.length,
@@ -121,7 +108,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     }
   }, [devices, filteredDevices])
 
-  // Filtros ativos (para badges)
   const activeFilters = useMemo(() => {
     const active = []
 
@@ -196,7 +182,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     return active
   }, [filters])
 
-  // Remover filtro individual
   const handleRemoveFilter = useCallback((key: string) => {
     setFilters(prev => {
       if (key === 'testStatus') {
@@ -206,7 +191,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     })
   }, [])
 
-  // Limpar todos os filtros
   const handleClearAllFilters = useCallback(() => {
     setFilters({
       deviceType: 'all',
@@ -220,7 +204,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     })
   }, [])
 
-  // Lógica de ordenação
   const handleSort = useCallback((column: SortColumn) => {
     setSortConfig(prev => {
       if (prev.column !== column) {
@@ -249,14 +232,12 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         return multiplier * (orderA - orderB)
       }
 
-      // Ordenar por quantidade de reprovas
       if (column === 'reprovas') {
         const countA = getFailedItems(a).length
         const countB = getFailedItems(b).length
         return multiplier * (countA - countB)
       }
 
-      // Colunas de teste (ATP, ITP, Leak Test, etc.)
       const testA = a.tests.find(t => t.testName === column)
       const testB = b.tests.find(t => t.testName === column)
       const orderA = testA ? (STATUS_ORDER[testA.status] ?? 99) : 100
@@ -265,7 +246,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     })
   }, [filteredDevices, sortConfig])
 
-  // Detect unique test columns from all devices (usar filteredDevices)
   const testColumns = useMemo(() => {
     const uniqueTests = new Set<string>()
     filteredDevices.forEach(device => {
@@ -276,17 +256,14 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     return Array.from(uniqueTests).sort()
   }, [filteredDevices])
 
-  // Check if any device has chip info (usar filteredDevices)
   const hasChipColumn = useMemo(() => {
     return filteredDevices.some(device => device.chipInfo)
   }, [filteredDevices])
 
-  // Mostrar coluna REPROVAS apenas se ao menos 1 dispositivo tiver parâmetros reprovados
   const hasReprovasColumn = useMemo(() => {
     return filteredDevices.some(device => getFailedItems(device).length > 0)
   }, [filteredDevices])
 
-  // Selection logic
   const allVisibleSelected = sortedDevices.length > 0 && sortedDevices.every(d => selectedIds.has(d.id))
   const someVisibleSelected = sortedDevices.some(d => selectedIds.has(d.id))
 
@@ -320,7 +297,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     setTimeout(() => setCopied(false), 2000)
   }, [selectedIds])
 
-  // Memoize handlers to prevent re-creating functions
   const handleDeviceClick = useCallback((device: Device) => {
     setSelectedDevice(device)
   }, [])
@@ -352,8 +328,7 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   return (
     <>
       <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        {/* Header with Clear Button */}
-        {devices.length > 0 && onClearAll && (
+        {onClearAll && (
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -399,15 +374,11 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
           </div>
         )}
 
-        {/* Barra de Filtros */}
-        {devices.length > 0 && (
-          <FilterBar
-            activeFiltersCount={activeFilters.length}
-            onOpenModal={() => setShowFilterModal(true)}
-          />
-        )}
+        <FilterBar
+          activeFiltersCount={activeFilters.length}
+          onOpenModal={() => setShowFilterModal(true)}
+        />
 
-        {/* Badges de Filtros Ativos */}
         <ActiveFilterBadges
           filters={activeFilters}
           onRemove={handleRemoveFilter}
@@ -441,7 +412,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
-                  {/* Checkbox select-all */}
                   <th className="pl-4 pr-2 py-4 w-8">
                     <input
                       ref={selectAllRef}
@@ -451,7 +421,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                       className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1a1a1a] cursor-pointer accent-primary-600"
                     />
                   </th>
-                  {/* ID Dispositivo - ordenável */}
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors group"
                     onClick={() => handleSort('id')}
@@ -466,7 +435,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                       Conectividade
                     </th>
                   )}
-                  {/* Colunas de teste - ordenáveis */}
                   {testColumns.map(testName => (
                     <th
                       key={testName}
@@ -479,7 +447,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                       </div>
                     </th>
                   ))}
-                  {/* Status Geral - ordenável */}
                   <th
                     className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
                     onClick={() => handleSort('overallStatus')}
@@ -489,7 +456,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                       <SortIcon direction={sortConfig.column === 'overallStatus' ? sortConfig.direction : null} />
                     </div>
                   </th>
-                  {/* Coluna REPROVAS - aparece só se tiver ao menos 1 reprovado */}
                   {hasReprovasColumn && (
                     <th
                       className="px-6 py-4 text-left text-xs font-bold text-danger-600 dark:text-danger-400 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
@@ -526,7 +492,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         </div>
       </div>
 
-      {/* Device Details Modal */}
       {selectedDevice && (
         <DeviceModal
           device={selectedDevice}
@@ -534,7 +499,6 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         />
       )}
 
-      {/* Filter Modal */}
       {showFilterModal && (
         <FilterModal
           devices={devices}

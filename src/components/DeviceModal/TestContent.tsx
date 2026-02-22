@@ -10,7 +10,6 @@ interface TestContentProps {
 export function TestContent({ test }: TestContentProps) {
   const [activeTab, setActiveTab] = useState(0)
 
-  // Determinar se usa sections ou parameters
   const hasSections = test.sections && test.sections.length > 0
   const hasParameters = test.parameters && test.parameters.length > 0
 
@@ -54,7 +53,6 @@ export function TestContent({ test }: TestContentProps) {
         </div>
       </div>
 
-      {/* Tabs (se houver sections) */}
       {hasSections && (
         <div className="border-b border-gray-200 dark:border-gray-700">
           <div className="flex gap-1">
@@ -75,9 +73,7 @@ export function TestContent({ test }: TestContentProps) {
         </div>
       )}
 
-      {/* Parameters Table */}
       {hasSections ? (
-        // Renderizar seção ativa
         test.sections![activeTab].parameters.length > 0 ? (
           <ParameterTable
             parameters={test.sections![activeTab].parameters}
@@ -96,7 +92,6 @@ export function TestContent({ test }: TestContentProps) {
           </div>
         )
       ) : hasParameters ? (
-        // Renderizar parameters (modo legado)
         <ParameterTable parameters={test.parameters!} />
       ) : (
         <div className="text-center py-12 bg-white dark:bg-[#141414] rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-800">
@@ -109,7 +104,6 @@ export function TestContent({ test }: TestContentProps) {
         </div>
       )}
 
-      {/* Test Metadata */}
       {test.responsible && (
         <div className="grid grid-cols-1 gap-4">
           <div className="p-4 bg-white dark:bg-gray-900 rounded-xl border-2 border-gray-200 dark:border-gray-700">
@@ -119,7 +113,6 @@ export function TestContent({ test }: TestContentProps) {
         </div>
       )}
 
-      {/* Observations */}
       {test.observations && (
         <div className="p-4 bg-white dark:bg-[#141414] rounded-lg border border-blue-200 dark:border-blue-900/30">
           <div className="flex items-start gap-3">
