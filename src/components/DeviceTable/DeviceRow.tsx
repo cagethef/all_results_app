@@ -8,6 +8,7 @@ interface DeviceRowProps {
   device: Device
   testColumns: string[]
   hasChipColumn: boolean
+  hasProtocolColumn: boolean
   hasReprovasColumn: boolean
   onClick: () => void
   index: number
@@ -15,7 +16,7 @@ interface DeviceRowProps {
   onToggle: (id: string) => void
 }
 
-export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasReprovasColumn, onClick, index, isSelected, onToggle }: DeviceRowProps) {
+export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasProtocolColumn, hasReprovasColumn, onClick, index, isSelected, onToggle }: DeviceRowProps) {
   // Create a map of test name to status for quick lookup
   const testStatusMap = useMemo(() => {
     const map = new Map<string, TestStatus>()
@@ -99,6 +100,17 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
           </td>
         )
       })}
+      {hasProtocolColumn && (
+        <td className="px-6 py-5 whitespace-nowrap">
+          {device.protocol ? (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+              {device.protocol}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400 dark:text-gray-500">-</span>
+          )}
+        </td>
+      )}
       <td className="px-6 py-5 whitespace-nowrap text-center">
         <span
           className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-sm ${

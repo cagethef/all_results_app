@@ -45,6 +45,7 @@ export interface Device {
   tests: Test[]
   chipInfo?: ChipInfo
   batch?: string
+  protocol?: string
 }
 
 export interface QRCodeResult {

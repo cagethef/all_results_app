@@ -70,7 +70,7 @@ export function Sidebar({ activeSection, onSectionChange, expanded, onToggle }: 
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.1.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.1.1</p>
         )}
 
         <button

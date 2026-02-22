@@ -238,6 +238,18 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         return multiplier * (countA - countB)
       }
 
+      if (column === 'connectivity') {
+        const valA = a.chipInfo?.type ?? ''
+        const valB = b.chipInfo?.type ?? ''
+        return multiplier * valA.localeCompare(valB)
+      }
+
+      if (column === 'protocol') {
+        const valA = a.protocol ?? ''
+        const valB = b.protocol ?? ''
+        return multiplier * valA.localeCompare(valB)
+      }
+
       const testA = a.tests.find(t => t.testName === column)
       const testB = b.tests.find(t => t.testName === column)
       const orderA = testA ? (STATUS_ORDER[testA.status] ?? 99) : 100
@@ -258,6 +270,10 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
 
   const hasChipColumn = useMemo(() => {
     return filteredDevices.some(device => device.chipInfo)
+  }, [filteredDevices])
+
+  const hasProtocolColumn = useMemo(() => {
+    return filteredDevices.some(device => device.protocol)
   }, [filteredDevices])
 
   const hasReprovasColumn = useMemo(() => {
@@ -431,8 +447,14 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                     </div>
                   </th>
                   {hasChipColumn && (
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Conectividade
+                    <th
+                      className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                      onClick={() => handleSort('connectivity')}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Conectividade
+                        <SortIcon direction={sortConfig.column === 'connectivity' ? sortConfig.direction : null} />
+                      </div>
                     </th>
                   )}
                   {testColumns.map(testName => (
@@ -447,6 +469,17 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                       </div>
                     </th>
                   ))}
+                  {hasProtocolColumn && (
+                    <th
+                      className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
+                      onClick={() => handleSort('protocol')}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        Protocolo
+                        <SortIcon direction={sortConfig.column === 'protocol' ? sortConfig.direction : null} />
+                      </div>
+                    </th>
+                  )}
                   <th
                     className="px-6 py-4 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors"
                     onClick={() => handleSort('overallStatus')}
@@ -479,6 +512,7 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                     device={device}
                     testColumns={testColumns}
                     hasChipColumn={hasChipColumn}
+                    hasProtocolColumn={hasProtocolColumn}
                     hasReprovasColumn={hasReprovasColumn}
                     onClick={() => handleDeviceClick(device)}
                     index={index}

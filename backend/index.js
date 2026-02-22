@@ -509,7 +509,8 @@ async function getDevicesByBatch(batchPrefix, res) {
         overallStatus: calculateStatus(tests),
         tests,
         chipInfo,
-        batch: batch || undefined
+        batch: batch || undefined,
+        protocol: atpData?.protocol_group || undefined
       };
 
       allDevices.push(device);
@@ -680,7 +681,8 @@ async function getDevicesByWorkorder(workorderNumber, res) {
         overallStatus: calculateStatus(tests),
         tests,
         chipInfo,
-        batch: batch || undefined
+        batch: batch || undefined,
+        protocol: atpData?.protocol_group || undefined
       });
     });
 
@@ -867,7 +869,8 @@ exports.getDevice = async (req, res) => {
       overallStatus: calculateStatus(tests),
       tests,
       chipInfo,
-      batch: batch || undefined
+      batch: batch || undefined,
+      protocol: atpData?.protocol_group || undefined
     };
 
     return res.json(device);
