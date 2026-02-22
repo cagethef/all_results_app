@@ -11,9 +11,11 @@ interface DeviceRowProps {
   hasReprovasColumn: boolean
   onClick: () => void
   index: number
+  isSelected: boolean
+  onToggle: (id: string) => void
 }
 
-export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasReprovasColumn, onClick, index }: DeviceRowProps) {
+export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasReprovasColumn, onClick, index, isSelected, onToggle }: DeviceRowProps) {
   // Create a map of test name to status for quick lookup
   const testStatusMap = useMemo(() => {
     const map = new Map<string, TestStatus>()
@@ -35,6 +37,14 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
       className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-[#1a1a1a] border-b border-gray-100 dark:border-gray-800 last:border-0"
       style={{ animationDelay: `${index * 50}ms` }}
     >
+      <td className="pl-4 pr-2 py-5 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggle(device.id)}
+          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 bg-white dark:bg-[#1a1a1a] cursor-pointer accent-primary-600"
+        />
+      </td>
       <td className="px-6 py-5 whitespace-nowrap">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 ${iconColors.bg} rounded-lg flex items-center justify-center`}>

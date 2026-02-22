@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { Device } from '@/types'
 import { getFailedItems } from '@/utils/deviceUtils'
 import { DeviceRow } from './DeviceRow'
@@ -53,6 +53,9 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ column: null, direction: null })
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [copied, setCopied] = useState(false)
+  const selectAllRef = useRef<HTMLInputElement>(null)
   const [filters, setFilters] = useState<Filters>({
     deviceType: 'all',
     connectivity: 'all',
@@ -283,6 +286,40 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     return filteredDevices.some(device => getFailedItems(device).length > 0)
   }, [filteredDevices])
 
+  // Selection logic
+  const allVisibleSelected = sortedDevices.length > 0 && sortedDevices.every(d => selectedIds.has(d.id))
+  const someVisibleSelected = sortedDevices.some(d => selectedIds.has(d.id))
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someVisibleSelected && !allVisibleSelected
+    }
+  }, [someVisibleSelected, allVisibleSelected])
+
+  const handleSelectAll = useCallback(() => {
+    if (allVisibleSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(sortedDevices.map(d => d.id)))
+    }
+  }, [allVisibleSelected, sortedDevices])
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleCopyIds = useCallback(() => {
+    const ids = Array.from(selectedIds).join(', ')
+    navigator.clipboard.writeText(ids)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [selectedIds])
+
   // Memoize handlers to prevent re-creating functions
   const handleDeviceClick = useCallback((device: Device) => {
     setSelectedDevice(device)
@@ -329,12 +366,36 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                 {stats.pending > 0 && `⏳ ${stats.pending} pendente${stats.pending > 1 ? 's' : ''}`}
               </p>
             </div>
-            <button
-              onClick={onClearAll}
-              className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            >
-              Limpar Todos
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={handleCopyIds}
+                  className="px-4 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copiar {selectedIds.size} ID{selectedIds.size > 1 ? 's' : ''}
+                    </>
+                  )}
+                </button>
+              )}
+              <button
+                onClick={onClearAll}
+                className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              >
+                Limpar Todos
+              </button>
+            </div>
           </div>
         )}
 
@@ -380,6 +441,16 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800">
+                  {/* Checkbox select-all */}
+                  <th className="pl-4 pr-2 py-4 w-8">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1a1a1a] cursor-pointer accent-primary-600"
+                    />
+                  </th>
                   {/* ID Dispositivo - ordenável */}
                   <th
                     className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors group"
@@ -445,6 +516,8 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
                     hasReprovasColumn={hasReprovasColumn}
                     onClick={() => handleDeviceClick(device)}
                     index={index}
+                    isSelected={selectedIds.has(device.id)}
+                    onToggle={handleToggleSelect}
                   />
                 ))}
               </tbody>
