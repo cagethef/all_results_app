@@ -1480,12 +1480,12 @@ function transformLeak(data) {
   const leakTestParams = [
     {
       name: 'Drop',
-      measured: `${fmt4(data.test_drop)} Pa/min`,
+      measured: `${fmt4(data.test_drop)} bar`,
       status: data.result_drop_pass ? 'approved' : 'failed'
     },
     {
       name: 'Slope',
-      measured: `${fmt4(data.test_slope)}`,
+      measured: `${fmt4(data.test_slope)} mbar/s`,
       status: data.result_slope_pass ? 'approved' : 'failed'
     },
     {
