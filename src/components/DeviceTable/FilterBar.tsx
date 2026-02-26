@@ -6,9 +6,9 @@ export interface Filters {
   carrier: string
   testStatus: {
     testName: string
-    status: string
+    status: string[]
   }
-  overallStatus: string
+  overallStatus: string[]
 }
 
 interface FilterBarProps {

@@ -56,15 +56,16 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [copied, setCopied] = useState(false)
   const selectAllRef = useRef<HTMLInputElement>(null)
+  const lastClickedIndexRef = useRef<number | null>(null)
   const [filters, setFilters] = useState<Filters>({
     deviceType: 'all',
     connectivity: 'all',
     carrier: 'all',
     testStatus: {
       testName: 'all',
-      status: 'all'
+      status: []
     },
-    overallStatus: 'all'
+    overallStatus: []
   })
 
   const filteredDevices = useMemo(() => {
@@ -88,10 +89,10 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
       if (filters.testStatus.testName !== 'all') {
         const test = device.tests.find(t => t.testName === filters.testStatus.testName)
         if (!test) return false
-        if (filters.testStatus.status !== 'all' && test.status !== filters.testStatus.status) return false
+        if (filters.testStatus.status.length > 0 && !filters.testStatus.status.includes(test.status)) return false
       }
 
-      if (filters.overallStatus !== 'all' && device.overallStatus !== filters.overallStatus) return false
+      if (filters.overallStatus.length > 0 && !filters.overallStatus.includes(device.overallStatus)) return false
 
       return true
     })
@@ -151,20 +152,18 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
         pending: 'Pendente',
         warning: 'Atenção'
       }
-      const displayValue =
-        filters.testStatus.status !== 'all'
-          ? `${filters.testStatus.testName} - ${statusLabels[filters.testStatus.status]}`
-          : filters.testStatus.testName
-      
+      const statusPart = filters.testStatus.status.length > 0
+        ? ` - ${filters.testStatus.status.map(s => statusLabels[s] ?? s).join(', ')}`
+        : ''
       active.push({
         key: 'testStatus',
         label: 'Teste',
         value: filters.testStatus.testName,
-        displayValue
+        displayValue: `${filters.testStatus.testName}${statusPart}`
       })
     }
 
-    if (filters.overallStatus !== 'all') {
+    if (filters.overallStatus.length > 0) {
       const statusLabels: Record<string, string> = {
         approved: 'Aprovado',
         failed: 'Reprovado',
@@ -174,8 +173,8 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
       active.push({
         key: 'overallStatus',
         label: 'Status Geral',
-        value: filters.overallStatus,
-        displayValue: statusLabels[filters.overallStatus] || filters.overallStatus
+        value: filters.overallStatus.join(','),
+        displayValue: filters.overallStatus.map(s => statusLabels[s] ?? s).join(', ')
       })
     }
 
@@ -185,7 +184,10 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   const handleRemoveFilter = useCallback((key: string) => {
     setFilters(prev => {
       if (key === 'testStatus') {
-        return { ...prev, testStatus: { testName: 'all', status: 'all' } }
+        return { ...prev, testStatus: { testName: 'all', status: [] } }
+      }
+      if (key === 'overallStatus') {
+        return { ...prev, overallStatus: [] }
       }
       return { ...prev, [key]: 'all' }
     })
@@ -196,11 +198,8 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
       deviceType: 'all',
       connectivity: 'all',
       carrier: 'all',
-      testStatus: {
-        testName: 'all',
-        status: 'all'
-      },
-      overallStatus: 'all'
+      testStatus: { testName: 'all', status: [] },
+      overallStatus: []
     })
   }, [])
 
@@ -284,6 +283,11 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
   const someVisibleSelected = sortedDevices.some(d => selectedIds.has(d.id))
 
   useEffect(() => {
+    setSelectedIds(new Set())
+    lastClickedIndexRef.current = null
+  }, [filters])
+
+  useEffect(() => {
     if (selectAllRef.current) {
       selectAllRef.current.indeterminate = someVisibleSelected && !allVisibleSelected
     }
@@ -297,14 +301,28 @@ export function DeviceTable({ devices, onClearAll }: DeviceTableProps) {
     }
   }, [allVisibleSelected, sortedDevices])
 
-  const handleToggleSelect = useCallback((id: string) => {
+  const handleToggleSelect = useCallback((id: string, index: number, shiftKey: boolean) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+
+      if (shiftKey && lastClickedIndexRef.current !== null) {
+        const start = Math.min(lastClickedIndexRef.current, index)
+        const end = Math.max(lastClickedIndexRef.current, index)
+        const rangeDevices = sortedDevices.slice(start, end + 1)
+        const allInRangeSelected = rangeDevices.every(d => next.has(d.id))
+        rangeDevices.forEach(d => {
+          if (allInRangeSelected) next.delete(d.id)
+          else next.add(d.id)
+        })
+      } else {
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        lastClickedIndexRef.current = index
+      }
+
       return next
     })
-  }, [])
+  }, [sortedDevices])
 
   const handleCopyIds = useCallback(() => {
     const ids = Array.from(selectedIds).join(', ')
