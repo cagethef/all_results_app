@@ -32,3 +32,6 @@ dist-ssr
 # Test Results Data (80k+ files)
 Resultados/
 Resultados/*
+
+# Claude Code
+.claude/

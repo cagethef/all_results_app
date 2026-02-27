@@ -49,21 +49,22 @@ const DEVICE_CONFIG = {
 };
 
 const TABLES_CONFIG = [
-  // ATP tables
-  { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_smarttrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'batch', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_atp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'ingestion_ts', batchColumn: 'batch', workorderColumn: 'workorder_number' },
+  // ATP tables — batchColumn primário: workorder_title (padrão unificado)
+  //              fallbackBatchColumn: coluna original por segurança
+  { table: 'fct_all_results_atp_energytrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_omni_receiver', idColumn: 'omni_receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_omnitrac', idColumn: 'omnitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_receiver', idColumn: 'receiver_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_smarttrac', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_unitrac', idColumn: 'unitrac_id', testType: 'atp', dateColumn: 'test_date', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_atp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'atp', dateColumn: 'ingestion_ts', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch', workorderColumn: 'workorder_number' },
 
-  // ITP tables (ITP do Omni Trac tem nomes de colunas diferentes!)
-  { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'batch_number', workorderColumn: 'workorder_number' },
-  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_completed_at', batchColumn: 'workorder_title', workorderColumn: 'workorder_number' },
+  // ITP tables — ambas usam workorder_title (itp_omnitrac estava errada com batch_number)
+  { table: 'fct_all_results_itp_omnitrac', idColumn: 'device_id', testType: 'itp', dateColumn: 'ingestion_ts', batchColumn: 'workorder_title', fallbackBatchColumn: 'batch_number', workorderColumn: 'workorder_number' },
+  { table: 'fct_all_results_itp_smarttrac_ultra_gen2', idColumn: 'sensor_id', testType: 'itp', dateColumn: 'test_completed_at', batchColumn: 'workorder_title', fallbackBatchColumn: null, workorderColumn: 'workorder_number' },
 
-  // Leak test
-  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'workorder_title', workorderColumn: 'workorder_number' }
+  // Leak test — info_batch é a coluna real do lote; workorder_title como fallback
+  { table: 'fct_all_results_leak_test', idColumn: 'device_id', testType: 'leak', dateColumn: 'test_date', batchColumn: 'info_batch', fallbackBatchColumn: 'workorder_title', workorderColumn: 'workorder_number' }
 ];
 
 const DATASET = 'operations_dbt';
@@ -125,7 +126,10 @@ function inferDeviceTypeFromLeak(leakData) {
 
   // type_ops é a fonte mais precisa (igual ao ATP)
   if (leakData.type_ops) {
-    return leakData.type_ops;
+    let deviceType = leakData.type_ops;
+    // Normalizar variações: "Smart Trac Ultra Gen2" → "Smart Trac Ultra Gen 2"
+    if (deviceType === 'Smart Trac Ultra Gen2') deviceType = 'Smart Trac Ultra Gen 2';
+    return deviceType;
   }
 
   // Fallback: usar info_device
@@ -201,8 +205,8 @@ async function fetchChipInfo(deviceId, config) {
   try {
     const chipQuery = `
       SELECT *
-      FROM \`tractian-bi.${DATASET}.int_devices_chip_check\`
-      WHERE id = @deviceId
+      FROM \`tractian-bi.${DATASET}.fct_chip_carrier_map\`
+      WHERE device_id = @deviceId
       LIMIT 1
     `;
     const [chipRows] = await bigquery.query({
@@ -271,48 +275,135 @@ async function searchAllTables(deviceId) {
   return filtered;
 }
 
+// Executa thunks com no máximo `concurrency` rodando ao mesmo tempo.
+// Usa pool de workers para não estourar o limite de queries concorrentes do BigQuery.
+async function runConcurrent(thunks, concurrency) {
+  let next = 0;
+  async function worker() {
+    while (next < thunks.length) {
+      const fn = thunks[next++];
+      try { await fn(); } catch (_) {}
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, thunks.length) }, worker));
+}
+
+// Retry cirúrgico: para dispositivos com ATP, ITP ou Leak pendente após busca por lote/workorder,
+// consulta diretamente por device_id na tabela específica do teste faltante.
+// Concorrência limitada a 25 para não sobrecarregar o BigQuery em lotes grandes (ex: 249 devices = ~500 queries).
+// Cobre o caso de dispositivos encontrados SOMENTE via Leak ou ITP no lote (sem ATP no batch).
+async function retryPendingTests(deviceMap) {
+  const retryThunks = [];
+
+  const makeRetryThunk = (tableCfg, deviceId, testType, data) => async () => {
+    try {
+      const [rows] = await bigquery.query({
+        query: `SELECT * FROM \`tractian-bi.${DATASET}.${tableCfg.table}\` WHERE ${tableCfg.idColumn} = @deviceId ORDER BY ${tableCfg.dateColumn} DESC LIMIT 1`,
+        params: { deviceId: deviceId.toUpperCase() },
+        useQueryCache: true
+      });
+      if (rows.length > 0) {
+        const row = rows[0];
+        row.device_id = row[tableCfg.idColumn];
+        row._testType = testType;
+        row._tableName = tableCfg.table;
+        if (testType === 'atp') data.atpData = row;
+        else if (testType === 'itp') data.itpData = row;
+        else if (testType === 'leak') data.leakData = row;
+        console.log(`[DEBUG] Retry: encontrou ${testType.toUpperCase()} para ${deviceId} em ${tableCfg.table}`);
+      }
+    } catch (err) {
+      console.error(`[WARN] Retry ${testType.toUpperCase()} falhou para ${deviceId}:`, err.message);
+    }
+  };
+
+  deviceMap.forEach((data, deviceId) => {
+    const { atpData, itpData, leakData, deviceName } = data;
+    if (!deviceName) return;
+
+    const config = DEVICE_CONFIG[deviceName];
+    if (!config) return;
+
+    // ATP pendente? (dispositivo encontrado só via ITP ou Leak no lote)
+    if (!atpData && config.tables.atp) {
+      const tableCfg = TABLES_CONFIG.find(t => t.table === `fct_all_results_atp_${config.tables.atp}`);
+      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'atp', data));
+    }
+
+    // ITP pendente?
+    if (!itpData && config.tables.itp) {
+      const tableCfg = TABLES_CONFIG.find(t => t.table === `fct_all_results_itp_${config.tables.itp}`);
+      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'itp', data));
+    }
+
+    // Leak pendente?
+    if (!leakData && config.tables.leak) {
+      const tableCfg = TABLES_CONFIG.find(t => t.testType === 'leak');
+      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'leak', data));
+    }
+  });
+
+  if (retryThunks.length > 0) {
+    console.log(`[DEBUG] Retry pendentes: ${retryThunks.length} teste(s) com concorrência 25...`);
+    await runConcurrent(retryThunks, 25);
+  }
+}
+
 // Função para buscar dispositivos por lote
 async function getDevicesByBatch(batchPrefix, res) {
   try {
     // 1. Buscar em TODAS as tabelas (ATP, ITP, Leak) em paralelo
-    const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType, dateColumn, batchColumn }) => {
-      const query = `
+    const promises = TABLES_CONFIG.map(async ({ table, idColumn, testType, dateColumn, batchColumn, fallbackBatchColumn }) => {
+      const buildBatchQuery = (col) => `
         SELECT * EXCEPT(row_num)
         FROM (
           SELECT *,
             ROW_NUMBER() OVER (PARTITION BY ${idColumn} ORDER BY ${dateColumn} DESC) as row_num
           FROM \`tractian-bi.${DATASET}.${table}\`
-          WHERE ${batchColumn} LIKE @batchPattern
+          WHERE ${col} LIKE @batchPattern
         )
         WHERE row_num = 1
       `;
 
+      let rows = [];
+      let usedBatchColumn = batchColumn;
+
+      // Tenta primeiro com workorder_title (padrão unificado)
       try {
-        const [rows] = await bigquery.query({
-          query,
+        [rows] = await bigquery.query({
+          query: buildBatchQuery(batchColumn),
           params: { batchPattern: `%${batchPrefix}%` },
           useQueryCache: true
         });
-
-        // Adiciona metadados para cada row
-        rows.forEach(row => {
-          row.device_id = row[idColumn]; // Normaliza device_id
-
-          // Limpar batch: ATP Gen 2 tem sufixo longo; workorder_title tem " - Lote..." depois do número
-          const batchValue = row[batchColumn];
-          row.batch = (table === 'fct_all_results_atp_smarttrac_ultra_gen2' || batchColumn === 'workorder_title')
-            ? cleanGen2Batch(batchValue) : batchValue;
-
-          row.test_date = row[dateColumn]; // Normaliza test_date
-          row._testType = testType;
-          row._tableName = table;
-        });
-
-        return rows;
       } catch (error) {
-        console.error(`Error searching batch in ${table}:`, error);
-        return [];
+        console.error(`Error searching batch (primary) in ${table}:`, error.message);
       }
+
+      // Fallback para coluna original se não encontrou nada
+      if (rows.length === 0 && fallbackBatchColumn) {
+        try {
+          console.log(`[DEBUG] Batch fallback: ${table} tentando coluna '${fallbackBatchColumn}'`);
+          [rows] = await bigquery.query({
+            query: buildBatchQuery(fallbackBatchColumn),
+            params: { batchPattern: `%${batchPrefix}%` },
+            useQueryCache: true
+          });
+          usedBatchColumn = fallbackBatchColumn;
+        } catch (error) {
+          console.error(`Error searching batch (fallback) in ${table}:`, error.message);
+        }
+      }
+
+      // Adiciona metadados para cada row
+      rows.forEach(row => {
+        row.device_id = row[idColumn];
+        row.batch = cleanGen2Batch(row[usedBatchColumn]);
+        row.test_date = row[dateColumn];
+        row._testType = testType;
+        row._tableName = table;
+      });
+
+      return rows;
     });
 
     // Aguardar todas as queries em paralelo
@@ -395,6 +486,9 @@ async function getDevicesByBatch(batchPrefix, res) {
       }
     });
 
+    // 2.5. Retry cirúrgico: busca por device_id os testes ainda pendentes
+    await retryPendingTests(deviceMap);
+
     // 3. Coletar device IDs que precisam de chip info
     const deviceIdsNeedingChip = [];
 
@@ -416,8 +510,8 @@ async function getDevicesByBatch(batchPrefix, res) {
       try {
         const chipQuery = `
           SELECT *
-          FROM \`tractian-bi.${DATASET}.int_devices_chip_check\`
-          WHERE id IN UNNEST(@deviceIds)
+          FROM \`tractian-bi.${DATASET}.fct_chip_carrier_map\`
+          WHERE device_id IN UNNEST(@deviceIds)
         `;
 
         const [chipRows] = await bigquery.query({
@@ -428,7 +522,7 @@ async function getDevicesByBatch(batchPrefix, res) {
 
         // Criar mapa: deviceId -> chipInfo
         chipRows.forEach(chipRow => {
-          chipMap.set(chipRow.id, transformChipInfo(chipRow));
+          chipMap.set(chipRow.device_id, transformChipInfo(chipRow));
         });
       } catch (error) {
         console.error('Error fetching chip info batch:', error);
@@ -558,11 +652,7 @@ async function getDevicesByWorkorder(workorderNumber, res) {
 
           rows.forEach(row => {
             row.device_id = row[idColumn];
-
-            const batchValue = row[batchColumn];
-            row.batch = (table === 'fct_all_results_atp_smarttrac_ultra_gen2' || batchColumn === 'workorder_title')
-              ? cleanGen2Batch(batchValue) : batchValue;
-
+            row.batch = cleanGen2Batch(row[batchColumn]);
             row.test_date = row[dateColumn];
             row._testType = testType;
             row._tableName = table;
@@ -612,6 +702,9 @@ async function getDevicesByWorkorder(workorderNumber, res) {
       }
     });
 
+    // 2.5. Retry cirúrgico: busca por device_id os testes ainda pendentes
+    await retryPendingTests(deviceMap);
+
     // 3. Chip info batch lookup
     const deviceIdsNeedingChip = [];
     deviceMap.forEach((data, deviceId) => {
@@ -624,11 +717,11 @@ async function getDevicesByWorkorder(workorderNumber, res) {
     if (deviceIdsNeedingChip.length > 0) {
       try {
         const [chipRows] = await bigquery.query({
-          query: `SELECT * FROM \`tractian-bi.${DATASET}.int_devices_chip_check\` WHERE id IN UNNEST(@deviceIds)`,
+          query: `SELECT * FROM \`tractian-bi.${DATASET}.fct_chip_carrier_map\` WHERE device_id IN UNNEST(@deviceIds)`,
           params: { deviceIds: deviceIdsNeedingChip },
           useQueryCache: true
         });
-        chipRows.forEach(chipRow => chipMap.set(chipRow.id, transformChipInfo(chipRow)));
+        chipRows.forEach(chipRow => chipMap.set(chipRow.device_id, transformChipInfo(chipRow)));
       } catch (error) {
         console.error('Error fetching chip info batch (workorder):', error);
       }
@@ -1480,12 +1573,12 @@ function transformLeak(data) {
   const leakTestParams = [
     {
       name: 'Drop',
-      measured: `${fmt4(data.test_drop)} Pa/min`,
+      measured: `${fmt4(data.test_drop)} bar`,
       status: data.result_drop_pass ? 'approved' : 'failed'
     },
     {
       name: 'Slope',
-      measured: `${fmt4(data.test_slope)}`,
+      measured: `${fmt4(data.test_slope)} mbar/s`,
       status: data.result_slope_pass ? 'approved' : 'failed'
     },
     {
@@ -1580,20 +1673,19 @@ function calculateStatus(tests) {
 }
 
 function transformChipInfo(data) {
-  if (!data || !data.operadora1) return null;
-  
-  const isInactive = data.operadora1 === 'Inactive';
-  const isDual = data.chip_config === 'Dual Chip' && data.sim_ccid2 && data.operadora2 !== 'Inactive';
-  
+  if (!data || !data.carrier_slot_1) return null;
+
+  const isDual = data.chip_config === 'Dual Chip' && data.iccid_slot_2 && data.carrier_slot_2 !== 'Vazio';
+
   return {
-    type: isInactive ? 'Não Identificado' : isDual ? 'Dual Chip' : 'Single Chip',
+    type: data.chip_config || (isDual ? 'Dual Chip' : 'Single Chip'),
     chip1: {
-      carrier: data.operadora1 === 'Inactive' ? 'Inativo' : data.operadora1,
-      ccid: data.sim_ccid1 || 'N/A'
+      carrier: data.carrier_slot_1,
+      ccid: data.iccid_slot_1 || data.active_iccid || 'N/A'
     },
     chip2: isDual ? {
-      carrier: data.operadora2 === 'Inactive' ? 'Inativo' : data.operadora2,
-      ccid: data.sim_ccid2
+      carrier: data.carrier_slot_2,
+      ccid: data.iccid_slot_2
     } : undefined
   };
 }

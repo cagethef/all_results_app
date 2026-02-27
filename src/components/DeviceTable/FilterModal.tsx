@@ -253,7 +253,7 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   isSelected={filters.testStatus.testName === 'all'}
                   onClick={() => onFiltersChange({ 
                     ...filters, 
-                    testStatus: { testName: 'all', status: 'all' } 
+                    testStatus: { testName: 'all', status: [] }
                   })}
                 />
                 {testNames.map(test => (
@@ -273,45 +273,23 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
               {filters.testStatus.testName !== 'all' && (
                 <div className="mt-4 pl-4 border-l-4 border-primary-500 bg-primary-50 dark:bg-primary-900/10 p-4 rounded-r-lg">
                   <h4 className="text-xs font-semibold text-primary-700 dark:text-primary-300 mb-3">
-                    Status do {filters.testStatus.testName}
+                    Status do {filters.testStatus.testName} <span className="font-normal opacity-70">(selecione um ou mais)</span>
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <FilterCard
-                      icon={<CheckCircle2 size={24} />}
-                      label="Todos"
-                      isSelected={filters.testStatus.status === 'all'}
-                      onClick={() => onFiltersChange({ 
-                        ...filters, 
-                        testStatus: { ...filters.testStatus, status: 'all' } 
-                      })}
-                    />
-                    <FilterCard
-                      icon={<CheckCircle2 size={24} />}
-                      label="Aprovado"
-                      isSelected={filters.testStatus.status === 'approved'}
-                      onClick={() => onFiltersChange({ 
-                        ...filters, 
-                        testStatus: { ...filters.testStatus, status: 'approved' } 
-                      })}
-                    />
-                    <FilterCard
-                      icon={<XCircle size={24} />}
-                      label="Reprovado"
-                      isSelected={filters.testStatus.status === 'failed'}
-                      onClick={() => onFiltersChange({ 
-                        ...filters, 
-                        testStatus: { ...filters.testStatus, status: 'failed' } 
-                      })}
-                    />
-                    <FilterCard
-                      icon={<Clock size={24} />}
-                      label="Pendente"
-                      isSelected={filters.testStatus.status === 'pending'}
-                      onClick={() => onFiltersChange({ 
-                        ...filters, 
-                        testStatus: { ...filters.testStatus, status: 'pending' } 
-                      })}
-                    />
+                    {(['approved', 'failed', 'pending'] as const).map(s => {
+                      const icons = { approved: <CheckCircle2 size={24} />, failed: <XCircle size={24} />, pending: <Clock size={24} /> }
+                      const labels = { approved: 'Aprovado', failed: 'Reprovado', pending: 'Pendente' }
+                      const isSelected = filters.testStatus.status.includes(s)
+                      const toggle = () => {
+                        const next = isSelected
+                          ? filters.testStatus.status.filter(x => x !== s)
+                          : [...filters.testStatus.status, s]
+                        onFiltersChange({ ...filters, testStatus: { ...filters.testStatus, status: next } })
+                      }
+                      return (
+                        <FilterCard key={s} icon={icons[s]} label={labels[s]} isSelected={isSelected} onClick={toggle} />
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -321,47 +299,26 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
           <div>
             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-2">
               <CheckCircle2 size={16} />
-              Status Geral do Dispositivo
+              Status Geral do Dispositivo <span className="font-normal text-gray-400 normal-case tracking-normal">(selecione um ou mais)</span>
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <FilterCard
-                icon={<CheckCircle2 size={24} />}
-                label="Todos"
-                isSelected={filters.overallStatus === 'all'}
-                onClick={() => onFiltersChange({ ...filters, overallStatus: 'all' })}
-              />
-              {availableOverallStatus.has('approved') && (
-                <FilterCard
-                  icon={<CheckCircle2 size={24} />}
-                  label="Aprovado"
-                  isSelected={filters.overallStatus === 'approved'}
-                  onClick={() => onFiltersChange({ ...filters, overallStatus: 'approved' })}
-                />
-              )}
-              {availableOverallStatus.has('failed') && (
-                <FilterCard
-                  icon={<XCircle size={24} />}
-                  label="Reprovado"
-                  isSelected={filters.overallStatus === 'failed'}
-                  onClick={() => onFiltersChange({ ...filters, overallStatus: 'failed' })}
-                />
-              )}
-              {availableOverallStatus.has('warning') && (
-                <FilterCard
-                  icon={<AlertTriangle size={24} />}
-                  label="Atenção"
-                  isSelected={filters.overallStatus === 'warning'}
-                  onClick={() => onFiltersChange({ ...filters, overallStatus: 'warning' })}
-                />
-              )}
-              {availableOverallStatus.has('pending') && (
-                <FilterCard
-                  icon={<Clock size={24} />}
-                  label="Pendente"
-                  isSelected={filters.overallStatus === 'pending'}
-                  onClick={() => onFiltersChange({ ...filters, overallStatus: 'pending' })}
-                />
-              )}
+              {(
+                [
+                  { key: 'approved', label: 'Aprovado', icon: <CheckCircle2 size={24} /> },
+                  { key: 'failed',   label: 'Reprovado', icon: <XCircle size={24} /> },
+                  { key: 'warning',  label: 'Atenção',   icon: <AlertTriangle size={24} /> },
+                  { key: 'pending',  label: 'Pendente',  icon: <Clock size={24} /> },
+                ] as const
+              ).filter(({ key }) => availableOverallStatus.has(key)).map(({ key, label, icon }) => {
+                const isSelected = filters.overallStatus.includes(key)
+                const toggle = () => {
+                  const next = isSelected
+                    ? filters.overallStatus.filter(x => x !== key)
+                    : [...filters.overallStatus, key]
+                  onFiltersChange({ ...filters, overallStatus: next })
+                }
+                return <FilterCard key={key} icon={icon} label={label} isSelected={isSelected} onClick={toggle} />
+              })}
             </div>
           </div>
         </div>
@@ -372,8 +329,8 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
               deviceType: 'all',
               connectivity: 'all',
               carrier: 'all',
-              testStatus: { testName: 'all', status: 'all' },
-              overallStatus: 'all'
+              testStatus: { testName: 'all', status: [] },
+              overallStatus: []
             })}
             className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] rounded-lg transition-colors"
           >

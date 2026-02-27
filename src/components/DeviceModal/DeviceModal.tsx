@@ -130,7 +130,7 @@ export function DeviceModal({ device, onClose }: DeviceModalProps) {
               {showChips && device.chipInfo ? (
                 <ChipContent chipInfo={device.chipInfo} />
               ) : activeTest ? (
-                <TestContent test={activeTest} />
+                <TestContent key={activeTest.testName} test={activeTest} />
               ) : (
                 <div className="text-center text-gray-500 py-12">
                   Nenhum conteúdo disponível

@@ -13,7 +13,7 @@ interface DeviceRowProps {
   onClick: () => void
   index: number
   isSelected: boolean
-  onToggle: (id: string) => void
+  onToggle: (id: string, index: number, shiftKey: boolean) => void
 }
 
 export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipColumn, hasProtocolColumn, hasReprovasColumn, onClick, index, isSelected, onToggle }: DeviceRowProps) {
@@ -41,7 +41,7 @@ export const DeviceRow = memo(function DeviceRow({ device, testColumns, hasChipC
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={() => onToggle(device.id)}
+          onChange={(e) => onToggle(device.id, index, (e.nativeEvent as MouseEvent).shiftKey)}
           className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 bg-white dark:bg-[#1a1a1a] cursor-pointer accent-primary-600"
         />
       </td>
