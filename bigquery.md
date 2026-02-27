@@ -4505,6 +4505,87 @@ fct_all_results_leak_test (JA EXISTE)
 ]
 ```
 
+## Tabela de Chip Info
+
+```
+fct_chip_carrier_map
+```
+
+Usada para buscar informações de chip/SIM de dispositivos com conectividade celular (Energy Trac, Omni Receiver, Receiver/Smart Receiver).
+
+**Chave**: `device_id` (era `id` na tabela antiga `int_devices_chip_check`)
+
+### Schema
+
+```json
+[
+  { "name": "device_id",          "type": "STRING"  },
+  { "name": "device_type",        "type": "STRING"  },
+  { "name": "sap_code",           "type": "STRING"  },
+  { "name": "batch_name",         "type": "STRING"  },
+  { "name": "last_firmware",      "type": "STRING"  },
+  { "name": "last_status",        "type": "STRING"  },
+  { "name": "replacement_date",   "type": "STRING"  },
+  { "name": "active_iccid",       "type": "STRING"  },
+  { "name": "iccid_slot_1",       "type": "STRING"  },
+  { "name": "iccid_slot_2",       "type": "STRING"  },
+  { "name": "carrier_slot_1",     "type": "STRING"  },
+  { "name": "carrier_slot_2",     "type": "STRING"  },
+  { "name": "chip_config",        "type": "STRING"  },
+  { "name": "warehouse",          "type": "STRING"  },
+  { "name": "stage",              "type": "STRING"  },
+  { "name": "company_category",   "type": "STRING"  },
+  { "name": "subsidiary_status",  "type": "STRING"  },
+  { "name": "company_id",         "type": "STRING"  },
+  { "name": "company_name",       "type": "STRING"  },
+  { "name": "is_replacement",     "type": "BOOLEAN" },
+  { "name": "carrier_combo",      "type": "STRING"  }
+]
+```
+
+### Exemplos
+
+**Single Chip:**
+```json
+{
+  "device_id": "EKK9T26",
+  "chip_config": "Single Chip",
+  "carrier_slot_1": "VIVO",
+  "carrier_slot_2": "Vazio",
+  "iccid_slot_1": "89551082157045039687",
+  "iccid_slot_2": null,
+  "active_iccid": "89551082157045039687",
+  "carrier_combo": "VIVO"
+}
+```
+
+**Dual Chip:**
+```json
+{
+  "device_id": "FPI5P39",
+  "chip_config": "Dual Chip",
+  "carrier_slot_1": "VIVO",
+  "carrier_slot_2": "TIM",
+  "iccid_slot_1": "89551082157045040792",
+  "iccid_slot_2": "89555480000079145336",
+  "active_iccid": "89551082157045040792",
+  "carrier_combo": "TIM / VIVO"
+}
+```
+
+### Mapeamento antigo → novo
+
+| Campo antigo (`int_devices_chip_check`) | Campo novo (`fct_chip_carrier_map`) |
+|-----------------------------------------|-------------------------------------|
+| `id`                                    | `device_id`                         |
+| `operadora1`                            | `carrier_slot_1`                    |
+| `operadora2`                            | `carrier_slot_2`                    |
+| `sim_ccid1`                             | `iccid_slot_1`                      |
+| `sim_ccid2`                             | `iccid_slot_2`                      |
+| `chip_config`                           | `chip_config` (igual)               |
+
+---
+
 ## Custo
 
 Cloud Functions tem 2 milhões de invocações grátis por mês. BigQuery tem 1TB de queries grátis por mês. Pro uso normal, fica dentro do free tier.
