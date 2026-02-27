@@ -1574,17 +1574,20 @@ function transformLeak(data) {
     {
       name: 'Drop',
       measured: `${fmt4(data.test_drop)} bar`,
-      status: data.result_drop_pass ? 'approved' : 'failed'
+      status: data.result_drop_pass ? 'approved' : 'failed',
+      rawValue: data.test_drop != null ? parseFloat(data.test_drop) : undefined
     },
     {
       name: 'Slope',
       measured: `${fmt4(data.test_slope)} mbar/s`,
-      status: data.result_slope_pass ? 'approved' : 'failed'
+      status: data.result_slope_pass ? 'approved' : 'failed',
+      rawValue: data.test_slope != null ? parseFloat(data.test_slope) : undefined
     },
     {
-      name: 'R² (Fit Quality)',
+      name: 'R²',
       measured: `${fmt4(data.test_r2)}`,
-      status: data.result_r2_pass ? 'approved' : 'failed'
+      status: data.result_r2_pass ? 'approved' : 'failed',
+      rawValue: data.test_r2 != null ? parseFloat(data.test_r2) : undefined
     }
   ];
 

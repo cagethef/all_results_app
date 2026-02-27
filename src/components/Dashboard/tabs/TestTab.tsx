@@ -18,6 +18,7 @@ import { FailureRanking } from '../widgets/FailureRanking'
 import { ParamComparisonChart } from '../widgets/ParamComparisonChart'
 import { DeviationRanking } from '../widgets/DeviationRanking'
 import { StepApprovalChart } from '../widgets/StepApprovalChart'
+import { ParamFilterPanel } from '../widgets/ParamFilterPanel'
 
 interface TestTabProps {
   devices: Device[]
@@ -150,6 +151,15 @@ export function TestTab({ devices, testName }: TestTabProps) {
         <ApprovalBarChart
           data={leakByJig}
           title="Taxa de Aprovação por Jiga — Leak Test"
+        />
+      )}
+
+      {/* Leak Test: filtro por valor numérico de parâmetro */}
+      {testName === 'Leak Test' && (
+        <ParamFilterPanel
+          devices={devices}
+          testName="Leak Test"
+          title="Filtrar por Valor de Parâmetro"
         />
       )}
 
