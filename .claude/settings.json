@@ -5,7 +5,8 @@
       "Bash(python3:*)",
       "Read(//c/tmp/**)",
       "Read(//c/Users/faraujo/AppData/Local/Temp//**)",
-      "Bash(/c/Users/faraujo/AppData/Local/Microsoft/WindowsApps/python3:*)"
+      "Bash(/c/Users/faraujo/AppData/Local/Microsoft/WindowsApps/python3:*)",
+      "WebFetch(domain:docs.cloud.google.com)"
     ]
   }
 }
