@@ -253,7 +253,7 @@ export function FilterModal({ devices, filters, onFiltersChange, onClose }: Filt
                   isSelected={filters.testStatus.testName === 'all'}
                   onClick={() => onFiltersChange({ 
                     ...filters, 
-                    testStatus: { testName: 'all', status: 'all' } 
+                    testStatus: { testName: 'all', status: [] }
                   })}
                 />
                 {testNames.map(test => (
