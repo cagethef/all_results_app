@@ -86,7 +86,7 @@ export function StepApprovalChart({ data, title }: Props) {
             <LabelList
               dataKey="rate"
               position="right"
-              formatter={(v: number) => `${v}%`}
+              formatter={(v: unknown) => `${v}%`}
               style={{ fill: '#9ca3af', fontSize: 11 }}
             />
           </Bar>

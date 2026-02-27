@@ -93,7 +93,7 @@ export function ApprovalBarChart({ data, title }: ApprovalBarChartProps) {
               <LabelList
                 dataKey="rate"
                 position="top"
-                formatter={(v: number) => `${v}%`}
+                formatter={(v: unknown) => `${v}%`}
                 style={{ fontSize: 11, fill: '#6b7280', fontWeight: 600 }}
               />
             </Bar>
