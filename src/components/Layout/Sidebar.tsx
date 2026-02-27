@@ -1,8 +1,9 @@
-import { Search, Moon, Sun, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navItems = [
-  { id: 'consultar', label: 'Consultar Dispositivos', icon: Search }
+  { id: 'consultar', label: 'Consultar Dispositivos', icon: Search    },
+  { id: 'dashboard', label: 'Dashboard',               icon: BarChart3 },
 ]
 
 interface SidebarProps {

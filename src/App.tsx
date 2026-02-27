@@ -3,6 +3,7 @@ import { DeviceTable } from './components/DeviceTable/DeviceTable'
 import { Scanner } from './components/Scanner/Scanner'
 import { Sidebar } from './components/Layout/Sidebar'
 import { StatsCards } from './components/Layout/StatsCards'
+import { Dashboard } from './components/Dashboard/Dashboard'
 import { ToastContainer } from './components/Toast/ToastContainer'
 import { WorkorderSelectModal } from './components/Scanner/WorkorderSelectModal'
 import { useDevices } from './hooks/useDevices'
@@ -36,18 +37,21 @@ function App() {
 
       <main className={`flex-1 ${sidebarExpanded ? 'ml-60' : 'ml-16'} transition-all duration-200`}>
         <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Stats Cards */}
-          <StatsCards stats={stats} devices={devices} />
+          {activeSection === 'consultar' && (
+            <>
+              <StatsCards stats={stats} devices={devices} />
+              <Scanner
+                onAddAll={addAllDevices}
+                onSingleDevice={addSingleDevice}
+                loading={loading}
+              />
+              <DeviceTable devices={devices} onClearAll={clearDevices} />
+            </>
+          )}
 
-          {/* Scanner Section */}
-          <Scanner
-            onAddAll={addAllDevices}
-            onSingleDevice={addSingleDevice}
-            loading={loading}
-          />
-
-          {/* Results Table */}
-          <DeviceTable devices={devices} onClearAll={clearDevices} />
+          {activeSection === 'dashboard' && (
+            <Dashboard devices={devices} />
+          )}
         </div>
       </main>
 

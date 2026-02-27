@@ -8,6 +8,7 @@ export interface Parameter {
   unit?: string
   status: TestStatus
   errorPercentage?: number
+  rawValue?: number
 }
 
 export interface Section {
