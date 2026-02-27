@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { CheckCircle, XCircle, TrendingUp } from 'lucide-react'
 import { Device } from '@/types'
 import {
-  getStatusDistribution,
   getTestSummary,
   getFailureRanking,
   getParamComparison,

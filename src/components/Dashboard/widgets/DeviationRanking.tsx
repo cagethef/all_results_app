@@ -80,7 +80,7 @@ export function DeviationRanking({ data, title }: Props) {
             tickFormatter={(v: string) => truncate(v)}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-          <Bar dataKey="deviationPct" name="Desvio %" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#9ca3af', fontSize: 11, formatter: (v: number) => `${v}%` }}>
+          <Bar dataKey="deviationPct" name="Desvio %" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#9ca3af', fontSize: 11, formatter: (v: unknown) => `${v}%` }}>
             {data.map((entry, i) => (
               <Cell key={i} fill={deviationColor(entry.deviationPct)} />
             ))}
