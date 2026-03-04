@@ -29,7 +29,7 @@ const CONFIGS = [
     name:     'atp_smarttrac',
     folderId: '1mRUm_mtt5rSoQDyUWuoh5l8Pm3AfUnGt',
     fileExt:  '.csv',
-    filenameRegex: /^smarttrac_(inputs|results)_(\d{8})_(\d{6})__#(.+)\.csv$/i,
+    filenameRegex: /^smarttrac_(inputs|results)_(\d{8})_(\d{6})__#?(.+)\.csv$/i,
     parseMeta: m => ({ file_type: m[1].toLowerCase(), upload_date: m[2], upload_time: m[3], lote: m[4] }),
     fallbackMeta: true,
     tables:   { inputs: 'operations_atp_smarttrac_inputs_raw', results: 'operations_atp_smarttrac_results_raw' },
