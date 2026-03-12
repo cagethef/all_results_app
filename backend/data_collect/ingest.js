@@ -58,10 +58,10 @@ const CONFIGS = [
     name:     'atp_receiver',
     folderId: '1Og6AbeAxmAq0ASWIuhFnowtLuEBR6X1_',
     fileExt:  '.csv',
-    filenameRegex: /^receiver_(inputs|results)_(\d{8})_(\d{6})__+#([a-z0-9_]+?)(?:\.csv)?$/i,
+    filenameRegex: /^receiver_(inputs|results)_(\d{8})_(\d{6})__+#([a-z0-9_\-]+?)(?:\.csv)?$/i,
     parseMeta: m => {
-      const lote = String(m[4] || '').replace(/_+$/g, '')
-      if (!/^\d{8}_\d{2}_.+/i.test(lote)) return null
+      const lote = String(m[4] || '').replace(/[_\-]+$/g, '')
+      if (!/^\d{8}[_\-]\d{2}[_\-].+/i.test(lote)) return null
       return { file_type: m[1].toLowerCase(), upload_date: m[2], upload_time: m[3], lote }
     },
     fallbackMeta: false,
