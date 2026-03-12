@@ -839,9 +839,19 @@ exports.getDevice = async (req, res) => {
     // 1. Buscar em TODAS as tabelas (ATP, ITP, Leak) em paralelo
     const allResults = await searchAllTables(deviceId);
 
-    // 2. Se não encontrou nada, retorna 404
+    // 2. Se não encontrou nada, retorna device pendente ao invés de 404
     if (allResults.length === 0) {
-      return res.status(404).json({ error: 'Device not found' });
+      return res.json({
+        id: deviceId.toUpperCase(),
+        deviceType: 'Dispositivo Desconhecido',
+        overallStatus: 'pending',
+        tests: [{
+          testName: 'ATP',
+          testType: 'electrical',
+          status: 'pending',
+          parameters: []
+        }]
+      });
     }
 
     // 3. Separar resultados por tipo de teste

@@ -1,19 +1,19 @@
-import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { Search, BarChart3, Bug, Moon, Sun, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navItems = [
-  { id: 'consultar', label: 'Consultar Dispositivos', icon: Search    },
-  { id: 'dashboard', label: 'Dashboard',               icon: BarChart3 },
+  { to: '/results',    label: 'Consultar Dispositivos', icon: Search    },
+  { to: '/dashboard',  label: 'Dashboard',               icon: BarChart3 },
+  { to: '/debugging',  label: 'Debugging',               icon: Bug       },
 ]
 
 interface SidebarProps {
-  activeSection: string
-  onSectionChange: (section: string) => void
   expanded: boolean
   onToggle: () => void
 }
 
-export function Sidebar({ activeSection, onSectionChange, expanded, onToggle }: SidebarProps) {
+export function Sidebar({ expanded, onToggle }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -25,7 +25,7 @@ export function Sidebar({ activeSection, onSectionChange, expanded, onToggle }: 
         <img src="/assets/logo.png" alt="Logo" className="w-9 h-9 object-contain flex-shrink-0" />
         {expanded && (
           <div className="ml-3 overflow-hidden">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">All Results</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">Quality Hub</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Sistema de testes</p>
           </div>
         )}
@@ -33,22 +33,24 @@ export function Sidebar({ activeSection, onSectionChange, expanded, onToggle }: 
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-1">
-        {navItems.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => onSectionChange(id)}
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
             title={!expanded ? label : undefined}
-            className={`w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
-              activeSection === id
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white'
-            }`}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
+                isActive
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white'
+              }`
+            }
           >
             <Icon size={18} className="flex-shrink-0" />
             {expanded && (
               <span className="text-sm font-medium whitespace-nowrap">{label}</span>
             )}
-          </button>
+          </NavLink>
         ))}
       </nav>
 
@@ -71,7 +73,7 @@ export function Sidebar({ activeSection, onSectionChange, expanded, onToggle }: 
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.2.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.3.0</p>
         )}
 
         <button
