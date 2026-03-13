@@ -4,6 +4,7 @@
   "description": "Cloud Function to fetch device test results from BigQuery",
   "main": "index.js",
   "dependencies": {
-    "@google-cloud/bigquery": "^7.0.0"
+    "@google-cloud/bigquery": "^7.0.0",
+    "@google-cloud/secret-manager": "^5.0.0"
   }
 }

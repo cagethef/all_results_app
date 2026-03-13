@@ -794,6 +794,10 @@ async function getDevicesByWorkorder(workorderNumber, res) {
   }
 }
 
+exports.getDebuggingPending  = require('./debug_pending').getDebuggingPending;
+exports.manageWorkorderLog   = require('./debug_workorder_log').manageWorkorderLog;
+exports.createWorkorder      = require('./create_workorder').createWorkorder;
+
 exports.getDevice = async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
