@@ -5,6 +5,7 @@ import { DeviceModal } from '../DeviceModal/DeviceModal'
 import { Device } from '@/types'
 import { ENDPOINTS } from '@/config/api'
 import { loadTemplate } from '../Admin/WorkorderConfig'
+import { fetchTemplate } from '@/lib/templateService'
 
 export interface DebugDevice {
   device_id: string
@@ -109,7 +110,7 @@ export function DebuggingPage() {
       const res = await fetch(CREATE_WO_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...device, template: loadTemplate() }),
+        body: JSON.stringify({ ...device, template: (await fetchTemplate()) ?? loadTemplate() }),
       })
       const data = await res.json()
       if (!res.ok) {

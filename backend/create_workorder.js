@@ -50,6 +50,31 @@ async function getAccessToken() {
   return token;
 }
 
+// Normaliza valores do BigQuery para bater com as opções do select no Tractian
+const DEVICE_TYPE_NORMALIZE = {
+  'smart trac ultra gen2':     'Smart Trac Ultra Gen 2',
+  'smart trac ultra gen 2':    'Smart Trac Ultra Gen 2',
+  'stu gen 2':                 'Smart Trac Ultra Gen 2',
+  'smart trac ultra ex':       'Smart Trac Ultra Ex',
+  'smart trac ultra':          'Smart Trac Ultra',
+  'stu':                       'Smart Trac Ultra',
+  'smart trac pro':            'Smart Trac Pro',
+  'smart receiver pro':        'Smart Receiver Pro',
+  'srp':                       'Smart Receiver Pro',
+  'smart receiver ultra':      'Smart Receiver Ultra',
+  'sru':                       'Smart Receiver Ultra',
+  'energy trac':               'Energy Trac',
+  'uni trac':                  'Uni Trac',
+  'omni trac cpu':             'Omni Trac Cpu',
+  'omni trac receiver':        'Omni Trac Receiver',
+  'omni trac':                 'Omni Trac Cpu',
+};
+
+function normalizeDeviceType(value) {
+  if (!value) return value;
+  return DEVICE_TYPE_NORMALIZE[String(value).toLowerCase().trim()] ?? value;
+}
+
 // Section IDs do template padrão do Tractian (h1 → seção 1, h2 → seção 2)
 const SECTION_ID_MAP = {
   h1: '8da2b662-c82b-4c5e-b9bc-f70fd42c60f6',
@@ -69,6 +94,9 @@ function buildProcedure(device, templateFields, now) {
 
     // Resolve valor do device pelo campo mapeado
     let rawValue = tf.mappedTo != null ? (device[tf.mappedTo] ?? null) : null;
+
+    // Normaliza device_type para bater com opções do WO
+    if (tf.mappedTo === 'device_type' && rawValue) rawValue = normalizeDeviceType(rawValue);
 
     // Formata datas para YYYY-MM-DD
     if (tf.type === 'date' && rawValue) {
