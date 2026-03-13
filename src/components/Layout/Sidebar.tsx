@@ -1,11 +1,18 @@
+import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft, Bug, ShieldCheck, ClipboardList } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-import { Search, BarChart3, Bug, Moon, Sun, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { hasAccess, type UserRole } from '@/lib/userService'
 
 const navItems = [
-  { to: '/results',    label: 'Consultar Dispositivos', icon: Search    },
-  { to: '/dashboard',  label: 'Dashboard',               icon: BarChart3 },
-  { to: '/debugging',  label: 'Debugging',               icon: Bug       },
+  { path: '/results',   label: 'Consultar Dispositivos', icon: Search,    minRole: 'quality_inspector' as UserRole },
+  { path: '/dashboard', label: 'Dashboard',               icon: BarChart3, minRole: 'quality_inspector' as UserRole },
+  { path: '/debugging', label: 'Debugging',               icon: Bug,       minRole: 'quality_inspector_debug' as UserRole },
+]
+
+const adminItems = [
+  { path: '/admin/roles',       label: 'Roles',        icon: ShieldCheck,   minRole: 'admin' as UserRole },
+  { path: '/admin/wo-template', label: 'Modelo de WO', icon: ClipboardList, minRole: 'admin' as UserRole },
 ]
 
 interface SidebarProps {
@@ -13,8 +20,31 @@ interface SidebarProps {
   onToggle: () => void
 }
 
+function NavItem({ path, label, icon: Icon, expanded }: { path: string; label: string; icon: React.ElementType; expanded: boolean }) {
+  return (
+    <NavLink
+      to={path}
+      title={!expanded ? label : undefined}
+      className={({ isActive }) =>
+        `w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
+          isActive
+            ? 'text-primary-600 dark:text-primary-400'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white'
+        }`
+      }
+    >
+      <Icon size={18} className="flex-shrink-0" />
+      {expanded && <span className="text-sm font-medium whitespace-nowrap">{label}</span>}
+    </NavLink>
+  )
+}
+
 export function Sidebar({ expanded, onToggle }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
+  const { role } = useAuth()
+
+  const visibleNavItems = navItems.filter(item => hasAccess(role, item.minRole))
+  const visibleAdminItems = adminItems.filter(item => hasAccess(role, item.minRole))
 
   return (
     <aside
@@ -32,26 +62,26 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-2 space-y-1">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={!expanded ? label : undefined}
-            className={({ isActive }) =>
-              `w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
-                isActive
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white'
-              }`
-            }
-          >
-            <Icon size={18} className="flex-shrink-0" />
-            {expanded && (
-              <span className="text-sm font-medium whitespace-nowrap">{label}</span>
-            )}
-          </NavLink>
+      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
+        {visibleNavItems.map(item => (
+          <NavItem key={item.path} {...item} expanded={expanded} />
         ))}
+
+        {/* Admin section */}
+        {visibleAdminItems.length > 0 && (
+          <div className="pt-3 mt-2 border-t border-gray-200 dark:border-gray-800">
+            {expanded && (
+              <p className="px-3 pb-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                Gerenciamento
+              </p>
+            )}
+            <div className="space-y-1">
+              {visibleAdminItems.map(item => (
+                <NavItem key={item.path} {...item} expanded={expanded} />
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Bottom */}
@@ -73,7 +103,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.4.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.5.0</p>
         )}
 
         <button
