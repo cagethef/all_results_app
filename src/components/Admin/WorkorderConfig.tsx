@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Type, ChevronDown, Calendar, Paperclip, ToggleLeft,
-  Heading, Plus, Trash2, RotateCcw, Check, ChevronUp, GripVertical
+  Heading, Plus, Trash2, RotateCcw, Check, ChevronUp, GripVertical, RefreshCw
 } from 'lucide-react'
+import { fetchTemplate, saveTemplateToFirestore } from '@/lib/templateService'
+import { useAuth } from '@/contexts/AuthContext'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,7 @@ const DEFAULT_TEMPLATE: TemplateField[] = [
 
 const STORAGE_KEY = 'wo_template_v2'
 
+// Usado como fallback local e para WO creation (sync)
 export function loadTemplate(): TemplateField[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -87,7 +90,7 @@ export function loadTemplate(): TemplateField[] {
   return DEFAULT_TEMPLATE.map(f => ({ ...f }))
 }
 
-function saveTemplate(t: TemplateField[]) {
+function saveLocalCache(t: TemplateField[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(t))
 }
 
@@ -337,8 +340,20 @@ function AddFieldPanel({ onAdd }: { onAdd: (f: TemplateField) => void }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function WorkorderConfig() {
+  const { user } = useAuth()
   const [fields, setFields] = useState<TemplateField[]>(loadTemplate)
   const [saved, setSaved] = useState(false)
+  const [loadingCloud, setLoadingCloud] = useState(true)
+
+  // Load from Firestore on mount
+  useEffect(() => {
+    fetchTemplate().then(remote => {
+      if (remote) {
+        setFields(remote)
+        saveLocalCache(remote)
+      }
+    }).finally(() => setLoadingCloud(false))
+  }, [])
 
   const update = (id: string, patch: Partial<TemplateField>) => {
     setFields(prev => prev.map(f => f.id === id ? { ...f, ...patch } : f))
@@ -355,16 +370,18 @@ export function WorkorderConfig() {
     setSaved(false)
   }
 
-  const handleSave = () => {
-    saveTemplate(fields)
+  const handleSave = async () => {
+    saveLocalCache(fields)
+    await saveTemplateToFirestore(fields, user?.email ?? 'unknown')
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
     const defaults = DEFAULT_TEMPLATE.map(f => ({ ...f }))
     setFields(defaults)
-    saveTemplate(defaults)
+    saveLocalCache(defaults)
+    await saveTemplateToFirestore(defaults, user?.email ?? 'unknown')
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -376,7 +393,8 @@ export function WorkorderConfig() {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          {loadingCloud && <RefreshCw size={11} className="animate-spin" />}
           {fields.length} campo{fields.length !== 1 ? 's' : ''} · {fillableCount}/{fillableTotal} com preenchimento automático
         </p>
         <div className="flex items-center gap-2">
