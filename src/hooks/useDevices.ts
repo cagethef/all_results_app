@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import { Device } from '@/types'
 import { calculateDeviceStats } from '@/utils/deviceUtils'
 import { ENDPOINTS } from '@/config/api'
+import { playFailSound } from '@/utils/sounds'
 
 export interface WorkorderOption {
   number: number
@@ -130,7 +131,7 @@ export function useDevices(toast: ToastFunctions) {
       const duplicateCount = allFound.length - seenInBatch.size
 
       if (newDevices.length > 0) {
-        setDevices(prev => [...prev, ...newDevices])
+        setDevices(prev => [...newDevices, ...prev])
       }
 
       if (newDevices.length > 0) {
@@ -181,7 +182,7 @@ export function useDevices(toast: ToastFunctions) {
         setDevices(prev => {
           const existingIds = new Set(prev.map(d => d.id))
           const newDevices = data.devices.filter((d: Device) => !existingIds.has(d.id))
-          return newDevices.length > 0 ? [...prev, ...newDevices] : prev
+          return newDevices.length > 0 ? [...newDevices, ...prev] : prev
         })
         const existingIds = new Set(devices.map(d => d.id))
         const added = data.devices.filter((d: Device) => !existingIds.has(d.id)).length
@@ -196,8 +197,9 @@ export function useDevices(toast: ToastFunctions) {
         } else {
           setDevices(prev => {
             if (prev.some(d => d.id === device.id)) return prev
-            return [...prev, device]
+            return [device, ...prev]
           })
+          if (device.overallStatus === 'failed') playFailSound()
           scheduleSingleToast(1)
         }
       }

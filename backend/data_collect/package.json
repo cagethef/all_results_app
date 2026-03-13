@@ -1,0 +1,13 @@
+{
+  "name": "data-collect-ingest",
+  "version": "1.0.0",
+  "description": "Cloud Function para ingestão de dados de teste no BigQuery",
+  "main": "ingest.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.9.0",
+    "googleapis": "^144.0.0"
+  }
+}

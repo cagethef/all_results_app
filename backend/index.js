@@ -289,33 +289,11 @@ async function runConcurrent(thunks, concurrency) {
 }
 
 // Retry cirúrgico: para dispositivos com ATP, ITP ou Leak pendente após busca por lote/workorder,
-// consulta diretamente por device_id na tabela específica do teste faltante.
-// Concorrência limitada a 25 para não sobrecarregar o BigQuery em lotes grandes (ex: 249 devices = ~500 queries).
-// Cobre o caso de dispositivos encontrados SOMENTE via Leak ou ITP no lote (sem ATP no batch).
+// agrupa os device_ids pendentes por tabela e faz UMA query com IN (...) por tabela,
+// evitando centenas de queries individuais em lotes grandes.
 async function retryPendingTests(deviceMap) {
-  const retryThunks = [];
-
-  const makeRetryThunk = (tableCfg, deviceId, testType, data) => async () => {
-    try {
-      const [rows] = await bigquery.query({
-        query: `SELECT * FROM \`tractian-bi.${DATASET}.${tableCfg.table}\` WHERE ${tableCfg.idColumn} = @deviceId ORDER BY ${tableCfg.dateColumn} DESC LIMIT 1`,
-        params: { deviceId: deviceId.toUpperCase() },
-        useQueryCache: true
-      });
-      if (rows.length > 0) {
-        const row = rows[0];
-        row.device_id = row[tableCfg.idColumn];
-        row._testType = testType;
-        row._tableName = tableCfg.table;
-        if (testType === 'atp') data.atpData = row;
-        else if (testType === 'itp') data.itpData = row;
-        else if (testType === 'leak') data.leakData = row;
-        console.log(`[DEBUG] Retry: encontrou ${testType.toUpperCase()} para ${deviceId} em ${tableCfg.table}`);
-      }
-    } catch (err) {
-      console.error(`[WARN] Retry ${testType.toUpperCase()} falhou para ${deviceId}:`, err.message);
-    }
-  };
+  // Agrupa: tableKey -> { tableCfg, testType, entries: [{ deviceId, data }] }
+  const tableGroups = new Map();
 
   deviceMap.forEach((data, deviceId) => {
     const { atpData, itpData, leakData, deviceName } = data;
@@ -324,29 +302,61 @@ async function retryPendingTests(deviceMap) {
     const config = DEVICE_CONFIG[deviceName];
     if (!config) return;
 
-    // ATP pendente? (dispositivo encontrado só via ITP ou Leak no lote)
-    if (!atpData && config.tables.atp) {
-      const tableCfg = TABLES_CONFIG.find(t => t.table === `fct_all_results_atp_${config.tables.atp}`);
-      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'atp', data));
-    }
+    const addGroup = (tableCfg, testType) => {
+      if (!tableCfg) return;
+      const key = `${tableCfg.table}__${testType}`;
+      if (!tableGroups.has(key)) tableGroups.set(key, { tableCfg, testType, entries: [] });
+      tableGroups.get(key).entries.push({ deviceId, data });
+    };
 
-    // ITP pendente?
-    if (!itpData && config.tables.itp) {
-      const tableCfg = TABLES_CONFIG.find(t => t.table === `fct_all_results_itp_${config.tables.itp}`);
-      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'itp', data));
-    }
+    if (!atpData && config.tables.atp)
+      addGroup(TABLES_CONFIG.find(t => t.table === `fct_all_results_atp_${config.tables.atp}`), 'atp');
 
-    // Leak pendente?
-    if (!leakData && config.tables.leak) {
-      const tableCfg = TABLES_CONFIG.find(t => t.testType === 'leak');
-      if (tableCfg) retryThunks.push(makeRetryThunk(tableCfg, deviceId, 'leak', data));
-    }
+    if (!itpData && config.tables.itp)
+      addGroup(TABLES_CONFIG.find(t => t.table === `fct_all_results_itp_${config.tables.itp}`), 'itp');
+
+    if (!leakData && config.tables.leak)
+      addGroup(TABLES_CONFIG.find(t => t.testType === 'leak'), 'leak');
   });
 
-  if (retryThunks.length > 0) {
-    console.log(`[DEBUG] Retry pendentes: ${retryThunks.length} teste(s) com concorrência 25...`);
-    await runConcurrent(retryThunks, 25);
-  }
+  if (tableGroups.size === 0) return;
+
+  const totalDevices = [...tableGroups.values()].reduce((s, g) => s + g.entries.length, 0);
+  console.log(`[DEBUG] Retry agrupado: ${tableGroups.size} tabela(s), ${totalDevices} device(s) pendentes`);
+
+  // Uma query por grupo (tabela+tipo), em paralelo
+  await Promise.all([...tableGroups.values()].map(async ({ tableCfg, testType, entries }) => {
+    const deviceIds = entries.map(e => e.deviceId.toUpperCase());
+    const query = `
+      SELECT * EXCEPT(row_num)
+      FROM (
+        SELECT *,
+          ROW_NUMBER() OVER (PARTITION BY ${tableCfg.idColumn} ORDER BY ${tableCfg.dateColumn} DESC) as row_num
+        FROM \`tractian-bi.${DATASET}.${tableCfg.table}\`
+        WHERE ${tableCfg.idColumn} IN UNNEST(@deviceIds)
+      )
+      WHERE row_num = 1
+    `;
+    try {
+      const [rows] = await bigquery.query({ query, params: { deviceIds }, useQueryCache: true });
+      // Mapeia resultado de volta para cada device
+      const resultMap = new Map(rows.map(r => [r[tableCfg.idColumn].toUpperCase(), r]));
+      entries.forEach(({ deviceId, data }) => {
+        const row = resultMap.get(deviceId.toUpperCase());
+        if (row) {
+          row.device_id = row[tableCfg.idColumn];
+          row._testType = testType;
+          row._tableName = tableCfg.table;
+          if (testType === 'atp') data.atpData = row;
+          else if (testType === 'itp') data.itpData = row;
+          else if (testType === 'leak') data.leakData = row;
+          console.log(`[DEBUG] Retry: encontrou ${testType.toUpperCase()} para ${deviceId} em ${tableCfg.table}`);
+        }
+      });
+    } catch (err) {
+      console.error(`[WARN] Retry ${testType.toUpperCase()} falhou para ${tableCfg.table}:`, err.message);
+    }
+  }));
 }
 
 // Função para buscar dispositivos por lote
@@ -843,9 +853,19 @@ exports.getDevice = async (req, res) => {
     // 1. Buscar em TODAS as tabelas (ATP, ITP, Leak) em paralelo
     const allResults = await searchAllTables(deviceId);
 
-    // 2. Se não encontrou nada, retorna 404
+    // 2. Se não encontrou nada, retorna device pendente ao invés de 404
     if (allResults.length === 0) {
-      return res.status(404).json({ error: 'Device not found' });
+      return res.json({
+        id: deviceId.toUpperCase(),
+        deviceType: 'Dispositivo Desconhecido',
+        overallStatus: 'pending',
+        tests: [{
+          testName: 'ATP',
+          testType: 'electrical',
+          status: 'pending',
+          parameters: []
+        }]
+      });
     }
 
     // 3. Separar resultados por tipo de teste
