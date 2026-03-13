@@ -103,7 +103,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.2.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.5.0</p>
         )}
 
         <button
