@@ -55,7 +55,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         <img src="/assets/logo.png" alt="Logo" className="w-9 h-9 object-contain flex-shrink-0" />
         {expanded && (
           <div className="ml-3 overflow-hidden">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">All Results</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">Quality Hub</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Sistema de testes</p>
           </div>
         )}
