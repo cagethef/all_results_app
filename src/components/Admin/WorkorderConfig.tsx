@@ -189,7 +189,6 @@ function FieldRow({
   const meta = TYPE_META[field.type]
   const Icon = meta.Icon
   const isHeading = field.type === 'heading'
-  const canMap = meta.canMap
 
   const mappedLabel = field.mappedTo
     ? DEVICE_FIELDS.find(f => f.value === field.mappedTo)?.label ?? field.mappedTo
