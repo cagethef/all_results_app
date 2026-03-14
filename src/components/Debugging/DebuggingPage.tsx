@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { RefreshCw, Plus, Bug } from 'lucide-react'
+import { RefreshCw, Plus } from 'lucide-react'
 import { DebuggingTable } from './DebuggingTable'
 import { DeviceModal } from '../DeviceModal/DeviceModal'
 import { Device } from '@/types'
