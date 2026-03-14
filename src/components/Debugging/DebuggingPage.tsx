@@ -175,7 +175,7 @@ export function DebuggingPage() {
     {selectedDevice && (
       <DeviceModal device={selectedDevice} onClose={() => setSelectedDevice(null)} />
     )}
-    <div className="space-y-6">
+    <div className="px-6 py-6 space-y-4">
       {/* Error */}
       {error && (
         <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
@@ -184,51 +184,38 @@ export function DebuggingPage() {
       )}
 
       {/* Table */}
+      <div className="px-6 pb-6">
       <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        {/* Title row */}
-        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Bug className="text-white" size={20} />
-            </div>
-            <h1 className="text-base font-semibold text-gray-900 dark:text-white">
-              Debugging Pendente
-            </h1>
-          </div>
-          {selectedCount > 0 && (
-            <button
-              onClick={handleCreateWOs}
-              disabled={creating}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {creating ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
-              Criar Work Orders ({selectedCount})
-            </button>
-          )}
-        </div>
 
-        {/* Count row */}
+        {/* Toolbar row */}
         <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-              {devices.length > 0
-                ? `${devices.length} dispositivo${devices.length !== 1 ? 's' : ''}`
-                : 'Nenhum dado carregado'}
-            </span>
-            {selectedCount > 0 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                · {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            {devices.length > 0 && (
+              <span>{devices.length} dispositivo{devices.length !== 1 ? 's' : ''}
+                {selectedCount > 0 && <span className="text-primary-600 dark:text-primary-400"> · {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}</span>}
               </span>
             )}
           </div>
-          <button
-            onClick={handleLoad}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-[#222] transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            Carregar
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedCount > 0 && (
+              <button
+                onClick={handleCreateWOs}
+                disabled={creating}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {creating ? <RefreshCw size={12} className="animate-spin" /> : <Plus size={12} />}
+                Criar Work Orders ({selectedCount})
+              </button>
+            )}
+            <button
+              onClick={handleLoad}
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-[#222] transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+              Carregar
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -272,6 +259,7 @@ export function DebuggingPage() {
           />
         )}
       </div>
+    </div>
     </div>
     </>
   )

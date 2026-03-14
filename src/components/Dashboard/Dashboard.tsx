@@ -92,12 +92,17 @@ export function Dashboard({ devices }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {devices.length} dispositivo{devices.length > 1 ? 's' : ''} na sessão atual
-          </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 bg-violet-500/10 dark:bg-violet-500/20 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-violet-200 dark:ring-violet-500/30">
+            <BarChart3 className="text-violet-600 dark:text-violet-400" size={19} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Análise da sessão</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {devices.length} dispositivo{devices.length > 1 ? 's' : ''} carregado{devices.length > 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
 
         {/* Export dropdown */}
@@ -142,7 +147,7 @@ export function Dashboard({ devices }: DashboardProps) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="flex gap-1 px-4 pt-3 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
           {tabs.map(tab => (
             <button

@@ -10,7 +10,7 @@ import { WorkorderPage } from './components/Admin/WorkorderPage'
 import { ToastContainer } from './components/Toast/ToastContainer'
 import { WorkorderSelectModal } from './components/Scanner/WorkorderSelectModal'
 import { LoginPage } from './components/Auth/LoginPage'
-import { UserMenu } from './components/Auth/UserMenu'
+import { TopBar } from './components/Layout/TopBar'
 import { useDevices } from './hooks/useDevices'
 import { useToast } from './hooks/useToast'
 import { useAuth } from './contexts/AuthContext'
@@ -78,20 +78,19 @@ function App() {
 
   return (
     <div className="min-h-screen flex">
-      <UserMenu />
       <Sidebar
         expanded={sidebarExpanded}
         onToggle={() => setSidebarExpanded(prev => !prev)}
       />
 
-      <main className={`flex-1 ${sidebarExpanded ? 'ml-60' : 'ml-16'} transition-all duration-200`}>
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className={`flex-1 ${sidebarExpanded ? 'ml-60' : 'ml-16'} transition-all duration-200 min-h-screen flex flex-col`}>
+          <TopBar />
           <Routes>
             <Route path="/" element={<Navigate to="/results" replace />} />
             <Route path="/login" element={<Navigate to="/results" replace />} />
             <Route path="/results" element={
               hasAccess(role, 'quality_inspector') ? (
-                <>
+                <div className="px-6 py-6 space-y-4">
                   <StatsCards stats={stats} devices={devices} />
                   <Scanner
                     onAddAll={addAllDevices}
@@ -99,11 +98,15 @@ function App() {
                     loading={loading}
                   />
                   <DeviceTable devices={devices} onClearAll={clearDevices} />
-                </>
+                </div>
               ) : <Navigate to="/" replace />
             } />
             <Route path="/dashboard" element={
-              hasAccess(role, 'quality_inspector') ? <Dashboard devices={devices} /> : <Navigate to="/" replace />
+              hasAccess(role, 'quality_inspector') ? (
+                <div className="px-6 py-6">
+                  <Dashboard devices={devices} />
+                </div>
+              ) : <Navigate to="/" replace />
             } />
             <Route path="/debugging" element={
               hasAccess(role, 'quality_inspector_debug') ? <DebuggingPage /> : <Navigate to="/results" replace />
@@ -115,7 +118,6 @@ function App() {
               hasAccess(role, 'admin') ? <WorkorderPage /> : <Navigate to="/results" replace />
             } />
           </Routes>
-        </div>
       </main>
 
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />

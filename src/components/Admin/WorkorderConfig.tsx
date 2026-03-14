@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Type, ChevronDown, Calendar, Paperclip, ToggleLeft,
-  Heading, Plus, Trash2, RotateCcw, Check, ChevronUp, GripVertical, RefreshCw
+  Heading, Plus, Trash2, RotateCcw, Check, ChevronUp, GripVertical, RefreshCw, X
 } from 'lucide-react'
 import { fetchTemplate, saveTemplateToFirestore } from '@/lib/templateService'
 import { useAuth } from '@/contexts/AuthContext'
@@ -111,6 +111,69 @@ const TYPE_META: Record<FieldType, { label: string; Icon: React.ElementType; col
 
 const FILLABLE_TYPES: FieldType[] = ['simpleText', 'select', 'date']
 
+// ── Options chip editor ──────────────────────────────────────────────────────
+
+function OptionsEditor({ options, onChange }: { options: string[]; onChange: (o: string[]) => void }) {
+  const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const add = () => {
+    const val = input.trim()
+    if (!val || options.includes(val)) return
+    onChange([...options, val])
+    setInput('')
+    inputRef.current?.focus()
+  }
+
+  const remove = (idx: number) => onChange(options.filter((_, i) => i !== idx))
+
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+        Opções ({options.length})
+      </label>
+      <div className="flex flex-wrap gap-1.5 mb-2 min-h-[32px] p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#141414]">
+        {options.filter(Boolean).map((opt, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 group"
+          >
+            {opt}
+            <button
+              onClick={() => remove(i)}
+              className="text-gray-400 hover:text-red-500 transition-colors ml-0.5"
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+        {options.length === 0 && (
+          <span className="text-xs text-gray-400 dark:text-gray-600 italic">Nenhuma opção ainda</span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
+          placeholder="Nova opção..."
+          className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#141414] text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        />
+        <button
+          onClick={add}
+          disabled={!input.trim()}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors disabled:opacity-40"
+        >
+          <Plus size={11} />
+          Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Field row ────────────────────────────────────────────────────────────────
 
 function FieldRow({
@@ -183,59 +246,17 @@ function FieldRow({
                 onClick={() => onUpdate(field.id, { required: !field.required })}
                 className={`relative w-9 h-5 rounded-full transition-colors ${field.required ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'}`}
               >
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${field.required ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${field.required ? 'translate-x-[18px]' : 'translate-x-0'}`} />
               </button>
             </div>
           )}
 
-          {/* Mapping (only for fillable types) */}
-          {canMap && (
-            <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                Auto-preencher com
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => onUpdate(field.id, { mappedTo: undefined })}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    !field.mappedTo
-                      ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 border-transparent'
-                      : 'bg-white dark:bg-[#141414] text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-gray-400'
-                  }`}
-                >
-                  Manual
-                </button>
-                {DEVICE_FIELDS.map(df => (
-                  <button
-                    key={df.value}
-                    onClick={() => onUpdate(field.id, { mappedTo: df.value })}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      field.mappedTo === df.value
-                        ? 'bg-blue-600 text-white border-transparent'
-                        : 'bg-white dark:bg-[#141414] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:text-blue-600'
-                    }`}
-                  >
-                    {df.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Options preview (select fields) */}
-          {field.type === 'select' && field.options && (
-            <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Opções ({field.options.length})
-              </label>
-              <textarea
-                rows={4}
-                value={field.options.join('\n')}
-                onChange={e => onUpdate(field.id, { options: e.target.value.split('\n') })}
-                className="w-full px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#141414] text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none font-mono"
-                placeholder="Uma opção por linha"
-              />
-            </div>
+{/* Options editor (select fields) */}
+          {field.type === 'select' && (
+            <OptionsEditor
+              options={field.options ?? []}
+              onChange={opts => onUpdate(field.id, { options: opts })}
+            />
           )}
 
           {/* Delete */}

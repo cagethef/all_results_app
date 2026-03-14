@@ -5,14 +5,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { hasAccess, type UserRole } from '@/lib/userService'
 
 const navItems = [
-  { path: '/results',   label: 'Consultar Dispositivos', icon: Search,    minRole: 'quality_inspector' as UserRole },
-  { path: '/dashboard', label: 'Dashboard',               icon: BarChart3, minRole: 'quality_inspector' as UserRole },
-  { path: '/debugging', label: 'Debugging',               icon: Bug,       minRole: 'quality_inspector_debug' as UserRole },
+  { path: '/results',   label: 'Consultar Dispositivos', icon: Search,    minRole: 'quality_inspector' as UserRole,       activeColor: 'text-blue-600 dark:text-blue-400',    activeBg: 'bg-blue-50 dark:bg-blue-500/10' },
+  { path: '/dashboard', label: 'Dashboard',               icon: BarChart3, minRole: 'quality_inspector' as UserRole,       activeColor: 'text-violet-600 dark:text-violet-400', activeBg: 'bg-violet-50 dark:bg-violet-500/10' },
+  { path: '/debugging', label: 'Debugging',               icon: Bug,       minRole: 'quality_inspector_debug' as UserRole, activeColor: 'text-amber-600 dark:text-amber-400',   activeBg: 'bg-amber-50 dark:bg-amber-500/10' },
 ]
 
 const adminItems = [
-  { path: '/admin/roles',       label: 'Roles',        icon: ShieldCheck,   minRole: 'admin' as UserRole },
-  { path: '/admin/wo-template', label: 'Modelo de WO', icon: ClipboardList, minRole: 'admin' as UserRole },
+  { path: '/admin/roles',       label: 'Roles',        icon: ShieldCheck,   minRole: 'admin' as UserRole, activeColor: 'text-rose-600 dark:text-rose-400',  activeBg: 'bg-rose-50 dark:bg-rose-500/10' },
+  { path: '/admin/wo-template', label: 'Modelo de WO', icon: ClipboardList, minRole: 'admin' as UserRole, activeColor: 'text-teal-600 dark:text-teal-400',  activeBg: 'bg-teal-50 dark:bg-teal-500/10' },
 ]
 
 interface SidebarProps {
@@ -20,7 +20,10 @@ interface SidebarProps {
   onToggle: () => void
 }
 
-function NavItem({ path, label, icon: Icon, expanded }: { path: string; label: string; icon: React.ElementType; expanded: boolean }) {
+function NavItem({ path, label, icon: Icon, expanded, activeColor, activeBg }: {
+  path: string; label: string; icon: React.ElementType; expanded: boolean
+  activeColor: string; activeBg: string
+}) {
   return (
     <NavLink
       to={path}
@@ -28,13 +31,13 @@ function NavItem({ path, label, icon: Icon, expanded }: { path: string; label: s
       className={({ isActive }) =>
         `w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
           isActive
-            ? 'text-primary-600 dark:text-primary-400'
+            ? `${activeColor} ${activeBg} font-medium`
             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white'
         }`
       }
     >
       <Icon size={18} className="flex-shrink-0" />
-      {expanded && <span className="text-sm font-medium whitespace-nowrap">{label}</span>}
+      {expanded && <span className="text-sm whitespace-nowrap">{label}</span>}
     </NavLink>
   )
 }
@@ -64,7 +67,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
         {visibleNavItems.map(item => (
-          <NavItem key={item.path} {...item} expanded={expanded} />
+          <NavItem key={item.path} {...item} expanded={expanded} activeColor={item.activeColor} activeBg={item.activeBg} />
         ))}
 
         {/* Admin section */}
@@ -77,7 +80,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
             )}
             <div className="space-y-1">
               {visibleAdminItems.map(item => (
-                <NavItem key={item.path} {...item} expanded={expanded} />
+                <NavItem key={item.path} {...item} expanded={expanded} activeColor={item.activeColor} activeBg={item.activeBg} />
               ))}
             </div>
           </div>
@@ -103,7 +106,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.5.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.6.0</p>
         )}
 
         <button
