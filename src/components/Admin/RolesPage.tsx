@@ -50,22 +50,24 @@ export function RolesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d0d]">
+    <div className="max-w-3xl mx-auto px-6 py-8 space-y-5">
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-violet-700 rounded-lg flex items-center justify-center flex-shrink-0">
-            <ShieldCheck className="text-white" size={20} />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-rose-500/10 dark:bg-rose-500/20 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-rose-200 dark:ring-rose-500/30">
+            <ShieldCheck className="text-rose-600 dark:text-rose-400" size={19} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Roles</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Gerenciamento de cargos e permissões</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Gerenciamento de Roles</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Atribua cargos e permissões aos usuários</p>
           </div>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#222] rounded-lg transition-colors disabled:opacity-50 shadow-sm"
         >
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           Atualizar
@@ -75,7 +77,7 @@ export function RolesPage() {
       {/* Role legend */}
       <div className="flex flex-wrap gap-2">
         {ROLES.map(r => (
-          <span key={r} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[r]}`}>
+          <span key={r} className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${ROLE_COLORS[r]}`}>
             {ROLE_LABELS[r]}
           </span>
         ))}
@@ -89,7 +91,7 @@ export function RolesPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="bg-white dark:bg-[#141414] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-gray-400 text-sm">
             <RefreshCw size={16} className="animate-spin mr-2" /> Carregando...
@@ -101,7 +103,7 @@ export function RolesPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
+              <tr className="bg-gray-50 dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-gray-800">
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Usuário</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
@@ -109,21 +111,21 @@ export function RolesPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {users.map(u => (
-                <tr key={u.email} className="hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors">
-                  <td className="px-5 py-3">
+                <tr key={u.email} className="hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-colors duration-150">
+                  <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       {u.picture ? (
-                        <img src={u.picture} alt={u.name} className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={u.picture} alt={u.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-800" referrerPolicy="no-referrer" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-semibold text-gray-500">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-semibold text-gray-500 ring-2 ring-gray-100 dark:ring-gray-800">
                           {u.name?.[0]?.toUpperCase()}
                         </div>
                       )}
                       <span className="font-medium text-gray-900 dark:text-white">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{u.email}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3.5 text-gray-500 dark:text-gray-400 text-xs">{u.email}</td>
+                  <td className="px-5 py-3.5">
                     {canEdit ? (
                       <div className="flex items-center gap-2">
                         <select
@@ -141,7 +143,7 @@ export function RolesPage() {
                       </div>
                     ) : (
                       u.role ? (
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[u.role]}`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${ROLE_COLORS[u.role]}`}>
                           {ROLE_LABELS[u.role]}
                         </span>
                       ) : (
@@ -161,6 +163,7 @@ export function RolesPage() {
           Apenas usuários com role <span className="font-semibold text-emerald-600 dark:text-emerald-400">DEV</span> podem alterar roles.
         </p>
       )}
+    </div>
     </div>
   )
 }
