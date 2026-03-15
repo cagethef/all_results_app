@@ -159,6 +159,7 @@ export function UsersPage() {
       await updateUserRole(email, roleId)
       setUsers(prev => prev.map(u => u.email === email ? { ...u, role: roleId } : u))
       const roleName = roles.find(r => r.id === roleId)?.name ?? roleId
+      toastSuccess(`Cargo atualizado para ${roleName}.`)
       createNotification({
         type:    'role_changed',
         title:   'Seu cargo foi atualizado',
