@@ -11,6 +11,7 @@ import { RolesConfigPage } from './components/Admin/RolesConfigPage'
 import { WorkorderPage } from './components/Admin/WorkorderPage'
 import { ToastContainer } from './components/Toast/ToastContainer'
 import { WorkorderSelectModal } from './components/Scanner/WorkorderSelectModal'
+import { HomePage } from './components/Home/HomePage'
 import { LoginPage } from './components/Auth/LoginPage'
 import { TopBar } from './components/Layout/TopBar'
 import { useDevices } from './hooks/useDevices'
@@ -93,8 +94,8 @@ function App() {
       <main className={`flex-1 ${sidebarExpanded ? 'ml-60' : 'ml-16'} transition-all duration-200 min-h-screen flex flex-col`}>
         <TopBar />
         <Routes>
-          <Route path="/" element={<Navigate to="/results" replace />} />
-          <Route path="/login" element={<Navigate to="/results" replace />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
 
           <Route path="/results" element={
             can('view_results') ? (

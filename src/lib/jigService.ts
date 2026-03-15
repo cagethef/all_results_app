@@ -8,6 +8,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  limit,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -102,8 +103,11 @@ export async function updateJigStatus(
 
 // ─── Logs ─────────────────────────────────────────────────────────────────────
 
-export async function getJigLogs(): Promise<JigLog[]> {
-  const q = query(collection(db, LOGS_COLLECTION), orderBy('openedAt', 'desc'))
+export async function getJigLogs(limitCount?: number): Promise<JigLog[]> {
+  const constraints = limitCount
+    ? [orderBy('openedAt', 'desc'), limit(limitCount)]
+    : [orderBy('openedAt', 'desc')]
+  const q = query(collection(db, LOGS_COLLECTION), ...constraints)
   const snap = await getDocs(q)
   return snap.docs.map(d => {
     const data = d.data()

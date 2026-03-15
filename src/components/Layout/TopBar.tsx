@@ -6,6 +6,7 @@ import { useNotifications } from '@/contexts/NotificationContext'
 import { NotificationPanel } from '@/components/Notifications/NotificationPanel'
 
 const PAGE_TITLES: Record<string, string> = {
+  '/':                  'Início',
   '/results':           'Consultar Dispositivos',
   '/dashboard':         'Dashboard',
   '/debugging':         'Debugging',
@@ -31,7 +32,7 @@ export function TopBar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const title = PAGE_TITLES[pathname] ?? 'Quality Hub'
+  const title = PAGE_TITLES[pathname] ?? ''
 
   return (
     <header className="sticky top-0 z-10 h-12 bg-white/95 dark:bg-[#111111]/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6">

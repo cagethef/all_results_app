@@ -1,4 +1,4 @@
-import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft, Bug, ShieldCheck, ClipboardList, Wrench, Users } from 'lucide-react'
+import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft, Bug, ShieldCheck, ClipboardList, Wrench, Users, Home } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -15,6 +15,7 @@ type NavItemDef = {
 }
 
 const navItems: NavItemDef[] = [
+  { path: '/',                label: 'Início',                 icon: Home,      permission: 'view_results',        activeColor: 'text-gray-900 dark:text-white',        activeBg: 'bg-gray-100 dark:bg-white/10'       },
   { path: '/results',         label: 'Consultar Dispositivos', icon: Search,    permission: 'view_results',        activeColor: 'text-blue-600 dark:text-blue-400',    activeBg: 'bg-blue-50 dark:bg-blue-500/10'    },
   { path: '/dashboard',       label: 'Dashboard',              icon: BarChart3, permission: 'view_dashboard',     activeColor: 'text-violet-600 dark:text-violet-400', activeBg: 'bg-violet-50 dark:bg-violet-500/10' },
   { path: '/debugging',       label: 'Debugging',              icon: Bug,       permission: 'view_debugging',     activeColor: 'text-amber-600 dark:text-amber-400',   activeBg: 'bg-amber-50 dark:bg-amber-500/10'  },
@@ -39,6 +40,7 @@ function NavItem({ path, label, icon: Icon, expanded, activeColor, activeBg }: {
   return (
     <NavLink
       to={path}
+      end={path === '/'}
       title={!expanded ? label : undefined}
       className={({ isActive }) =>
         `w-full flex items-center gap-3 py-2 rounded-lg transition-colors ${expanded ? 'px-3' : 'justify-center'} ${
@@ -70,7 +72,6 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         <img src="/assets/logo.png" alt="Logo" className="w-9 h-9 object-contain flex-shrink-0" />
         {expanded && (
           <div className="ml-3 overflow-hidden">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">Quality Hub</p>
             <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Sistema de testes</p>
           </div>
         )}
@@ -117,7 +118,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
         </button>
 
         {expanded && (
-          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.6.0</p>
+          <p className="px-3 py-1 text-xs text-gray-400 dark:text-gray-600">v0.7.0</p>
         )}
 
         <button
