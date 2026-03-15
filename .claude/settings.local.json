@@ -4,7 +4,9 @@
       "Bash(gcloud functions deploy:*)",
       "Bash(npx tsc:*)",
       "Bash(taskkill:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(find /c/Users/felip/Documents/GitHub/all_results_app/backend -type f \\\\\\( -name \"*.js\" -o -name \"*.gs\" \\\\\\) -exec wc -l {} +)"
     ]
   }
 }

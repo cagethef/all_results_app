@@ -1,0 +1,9 @@
+{
+  "name": "slack-proxy",
+  "version": "1.0.0",
+  "description": "Cloud Function proxy for Slack Web API (bypasses browser CORS)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  }
+}

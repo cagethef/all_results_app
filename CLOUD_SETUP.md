@@ -95,6 +95,33 @@ gcloud functions deploy getDevice \
   --allow-unauthenticated
 ```
 
+## Deploy da Cloud Function — Slack Proxy
+
+```bash
+# Entrar na pasta slack
+cd backend/slack
+
+# Deploy
+gcloud functions deploy slackProxy \
+  --gen2 \
+  --runtime=nodejs22 \
+  --region=southamerica-east1 \
+  --source=. \
+  --entry-point=slackProxy \
+  --trigger-http \
+  --allow-unauthenticated
+```
+
+A URL da função será:
+```
+https://southamerica-east1-tractian-bi.cloudfunctions.net/slackProxy
+```
+
+Configure no `.env`:
+```
+VITE_SLACK_PROXY_URL=https://southamerica-east1-tractian-bi.cloudfunctions.net/slackProxy
+```
+
 ## Custos
 
 - 2 milhões de invocações grátis/mês
