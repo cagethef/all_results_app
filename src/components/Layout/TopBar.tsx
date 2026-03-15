@@ -2,24 +2,30 @@ import { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { LogOut, Bell } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/contexts/NotificationContext'
+import { NotificationPanel } from '@/components/Notifications/NotificationPanel'
 
 const PAGE_TITLES: Record<string, string> = {
   '/results':           'Consultar Dispositivos',
   '/dashboard':         'Dashboard',
   '/debugging':         'Debugging',
-  '/admin/roles':       'Roles',
+  '/admin/users':       'Usuários',
+  '/admin/roles':       'Cargos',
   '/admin/wo-template': 'Modelo de WO',
+  '/jig-management':    'Gestão de Jigas',
 }
 
 export function TopBar() {
-  const { user, signOut } = useAuth()
-  const { pathname } = useLocation()
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const { user, signOut }          = useAuth()
+  const { unreadCount }            = useNotifications()
+  const { pathname }               = useLocation()
+  const [userOpen, setUserOpen]    = useState(false)
+  const [notifOpen, setNotifOpen]  = useState(false)
+  const userRef  = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -32,13 +38,26 @@ export function TopBar() {
       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</span>
 
       <div className="flex items-center gap-3">
-        <button className="relative p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors">
-          <Bell size={16} />
-        </button>
-
-        <div ref={ref} className="relative">
+        {/* Bell */}
+        <div className="relative">
           <button
-            onClick={() => setOpen(o => !o)}
+            onClick={() => setNotifOpen(o => !o)}
+            className="relative p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
+          >
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+        </div>
+
+        {/* User avatar */}
+        <div ref={userRef} className="relative">
+          <button
+            onClick={() => setUserOpen(o => !o)}
             className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary-500 transition-all"
           >
             {user?.picture
@@ -47,7 +66,7 @@ export function TopBar() {
             }
           </button>
 
-          {open && (
+          {userOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name}</p>

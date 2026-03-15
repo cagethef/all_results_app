@@ -1,18 +1,30 @@
-import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft, Bug, ShieldCheck, ClipboardList } from 'lucide-react'
+import { Search, BarChart3, Moon, Sun, ChevronRight, ChevronLeft, Bug, ShieldCheck, ClipboardList, Wrench, Users } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { hasAccess, type UserRole } from '@/lib/userService'
+import { hasPermission } from '@/types'
+import type { RolePermissions } from '@/types'
 
-const navItems = [
-  { path: '/results',   label: 'Consultar Dispositivos', icon: Search,    minRole: 'quality_inspector' as UserRole,       activeColor: 'text-blue-600 dark:text-blue-400',    activeBg: 'bg-blue-50 dark:bg-blue-500/10' },
-  { path: '/dashboard', label: 'Dashboard',               icon: BarChart3, minRole: 'quality_inspector' as UserRole,       activeColor: 'text-violet-600 dark:text-violet-400', activeBg: 'bg-violet-50 dark:bg-violet-500/10' },
-  { path: '/debugging', label: 'Debugging',               icon: Bug,       minRole: 'quality_inspector_debug' as UserRole, activeColor: 'text-amber-600 dark:text-amber-400',   activeBg: 'bg-amber-50 dark:bg-amber-500/10' },
+type NavItemDef = {
+  path: string
+  label: string
+  icon: React.ElementType
+  permission: keyof RolePermissions
+  activeColor: string
+  activeBg: string
+}
+
+const navItems: NavItemDef[] = [
+  { path: '/results',         label: 'Consultar Dispositivos', icon: Search,    permission: 'view_results',        activeColor: 'text-blue-600 dark:text-blue-400',    activeBg: 'bg-blue-50 dark:bg-blue-500/10'    },
+  { path: '/dashboard',       label: 'Dashboard',              icon: BarChart3, permission: 'view_dashboard',     activeColor: 'text-violet-600 dark:text-violet-400', activeBg: 'bg-violet-50 dark:bg-violet-500/10' },
+  { path: '/debugging',       label: 'Debugging',              icon: Bug,       permission: 'view_debugging',     activeColor: 'text-amber-600 dark:text-amber-400',   activeBg: 'bg-amber-50 dark:bg-amber-500/10'  },
+  { path: '/jig-management',  label: 'Gestão de Jigas',        icon: Wrench,    permission: 'view_jig_management', activeColor: 'text-orange-600 dark:text-orange-400', activeBg: 'bg-orange-50 dark:bg-orange-500/10' },
 ]
 
-const adminItems = [
-  { path: '/admin/roles',       label: 'Roles',        icon: ShieldCheck,   minRole: 'admin' as UserRole, activeColor: 'text-rose-600 dark:text-rose-400',  activeBg: 'bg-rose-50 dark:bg-rose-500/10' },
-  { path: '/admin/wo-template', label: 'Modelo de WO', icon: ClipboardList, minRole: 'admin' as UserRole, activeColor: 'text-teal-600 dark:text-teal-400',  activeBg: 'bg-teal-50 dark:bg-teal-500/10' },
+const adminItems: NavItemDef[] = [
+  { path: '/admin/users',  label: 'Usuários', icon: Users,       permission: 'manage_users', activeColor: 'text-rose-600 dark:text-rose-400', activeBg: 'bg-rose-50 dark:bg-rose-500/10'  },
+  { path: '/admin/roles',  label: 'Cargos',   icon: ShieldCheck, permission: 'manage_roles', activeColor: 'text-teal-600 dark:text-teal-400', activeBg: 'bg-teal-50 dark:bg-teal-500/10'  },
+  { path: '/admin/wo-template', label: 'Modelo de WO', icon: ClipboardList, permission: 'manage_users', activeColor: 'text-indigo-600 dark:text-indigo-400', activeBg: 'bg-indigo-50 dark:bg-indigo-500/10' },
 ]
 
 interface SidebarProps {
@@ -44,10 +56,10 @@ function NavItem({ path, label, icon: Icon, expanded, activeColor, activeBg }: {
 
 export function Sidebar({ expanded, onToggle }: SidebarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { role } = useAuth()
+  const { permissions } = useAuth()
 
-  const visibleNavItems = navItems.filter(item => hasAccess(role, item.minRole))
-  const visibleAdminItems = adminItems.filter(item => hasAccess(role, item.minRole))
+  const visibleNavItems   = navItems.filter(item => hasPermission(permissions, item.permission))
+  const visibleAdminItems = adminItems.filter(item => hasPermission(permissions, item.permission))
 
   return (
     <aside
@@ -67,10 +79,9 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
         {visibleNavItems.map(item => (
-          <NavItem key={item.path} {...item} expanded={expanded} activeColor={item.activeColor} activeBg={item.activeBg} />
+          <NavItem key={item.path} {...item} expanded={expanded} />
         ))}
 
-        {/* Admin section */}
         {visibleAdminItems.length > 0 && (
           <div className="pt-3 mt-2 border-t border-gray-200 dark:border-gray-800">
             {expanded && (
@@ -80,7 +91,7 @@ export function Sidebar({ expanded, onToggle }: SidebarProps) {
             )}
             <div className="space-y-1">
               {visibleAdminItems.map(item => (
-                <NavItem key={item.path} {...item} expanded={expanded} activeColor={item.activeColor} activeBg={item.activeBg} />
+                <NavItem key={item.path} {...item} expanded={expanded} />
               ))}
             </div>
           </div>

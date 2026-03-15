@@ -5,7 +5,9 @@ import { Sidebar } from './components/Layout/Sidebar'
 import { StatsCards } from './components/Layout/StatsCards'
 import { Dashboard } from './components/Dashboard/Dashboard'
 import { DebuggingPage } from './components/Debugging/DebuggingPage'
-import { RolesPage } from './components/Admin/RolesPage'
+import { JigManagementPage } from './components/JigManagement/JigManagementPage'
+import { UsersPage } from './components/Admin/UsersPage'
+import { RolesConfigPage } from './components/Admin/RolesConfigPage'
 import { WorkorderPage } from './components/Admin/WorkorderPage'
 import { ToastContainer } from './components/Toast/ToastContainer'
 import { WorkorderSelectModal } from './components/Scanner/WorkorderSelectModal'
@@ -14,7 +16,9 @@ import { TopBar } from './components/Layout/TopBar'
 import { useDevices } from './hooks/useDevices'
 import { useToast } from './hooks/useToast'
 import { useAuth } from './contexts/AuthContext'
-import { hasAccess } from './lib/userService'
+import { NotificationProvider } from './contexts/NotificationContext'
+import { ToastProvider } from './contexts/ToastContext'
+import { hasPermission } from './types'
 import { Clock } from 'lucide-react'
 import { useState } from 'react'
 
@@ -45,18 +49,11 @@ function PendingApproval() {
 }
 
 function App() {
-  const { user, role, roleLoading } = useAuth()
+  const { user, role, permissions, roleLoading } = useAuth()
   const toast = useToast()
   const {
-    devices,
-    addAllDevices,
-    addSingleDevice,
-    clearDevices,
-    stats,
-    loading,
-    pendingDisambiguation,
-    resolveDisambiguation,
-    cancelDisambiguation,
+    devices, addAllDevices, addSingleDevice, clearDevices, stats,
+    loading, pendingDisambiguation, resolveDisambiguation, cancelDisambiguation,
   } = useDevices(toast)
 
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
@@ -76,7 +73,17 @@ function App() {
 
   if (!role) return <PendingApproval />
 
+  if (!permissions) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#0a0a0a]">
+      <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+
+  const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(permissions, p)
+
   return (
+    <ToastProvider>
+    <NotificationProvider>
     <div className="min-h-screen flex">
       <Sidebar
         expanded={sidebarExpanded}
@@ -84,40 +91,49 @@ function App() {
       />
 
       <main className={`flex-1 ${sidebarExpanded ? 'ml-60' : 'ml-16'} transition-all duration-200 min-h-screen flex flex-col`}>
-          <TopBar />
-          <Routes>
-            <Route path="/" element={<Navigate to="/results" replace />} />
-            <Route path="/login" element={<Navigate to="/results" replace />} />
-            <Route path="/results" element={
-              hasAccess(role, 'quality_inspector') ? (
-                <div className="px-6 py-6 space-y-4">
-                  <StatsCards stats={stats} devices={devices} />
-                  <Scanner
-                    onAddAll={addAllDevices}
-                    onSingleDevice={addSingleDevice}
-                    loading={loading}
-                  />
-                  <DeviceTable devices={devices} onClearAll={clearDevices} />
-                </div>
-              ) : <Navigate to="/" replace />
-            } />
-            <Route path="/dashboard" element={
-              hasAccess(role, 'quality_inspector') ? (
-                <div className="px-6 py-6">
-                  <Dashboard devices={devices} />
-                </div>
-              ) : <Navigate to="/" replace />
-            } />
-            <Route path="/debugging" element={
-              hasAccess(role, 'quality_inspector_debug') ? <DebuggingPage /> : <Navigate to="/results" replace />
-            } />
-            <Route path="/admin/roles" element={
-              hasAccess(role, 'admin') ? <RolesPage /> : <Navigate to="/results" replace />
-            } />
-            <Route path="/admin/wo-template" element={
-              hasAccess(role, 'admin') ? <WorkorderPage /> : <Navigate to="/results" replace />
-            } />
-          </Routes>
+        <TopBar />
+        <Routes>
+          <Route path="/" element={<Navigate to="/results" replace />} />
+          <Route path="/login" element={<Navigate to="/results" replace />} />
+
+          <Route path="/results" element={
+            can('view_results') ? (
+              <div className="px-6 py-6 space-y-4">
+                <StatsCards stats={stats} devices={devices} />
+                <Scanner onAddAll={addAllDevices} onSingleDevice={addSingleDevice} loading={loading} />
+                <DeviceTable devices={devices} onClearAll={clearDevices} />
+              </div>
+            ) : <Navigate to="/" replace />
+          } />
+
+          <Route path="/dashboard" element={
+            can('view_dashboard') ? (
+              <div className="px-6 py-6">
+                <Dashboard devices={devices} />
+              </div>
+            ) : <Navigate to="/" replace />
+          } />
+
+          <Route path="/debugging" element={
+            can('view_debugging') ? <DebuggingPage /> : <Navigate to="/results" replace />
+          } />
+
+          <Route path="/jig-management" element={
+            can('view_jig_management') ? <JigManagementPage /> : <Navigate to="/results" replace />
+          } />
+
+          <Route path="/admin/users" element={
+            can('manage_users') ? <UsersPage /> : <Navigate to="/results" replace />
+          } />
+
+          <Route path="/admin/roles" element={
+            can('manage_users') ? <RolesConfigPage /> : <Navigate to="/results" replace />
+          } />
+
+          <Route path="/admin/wo-template" element={
+            can('manage_users') ? <WorkorderPage /> : <Navigate to="/results" replace />
+          } />
+        </Routes>
       </main>
 
       <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
@@ -130,6 +146,8 @@ function App() {
         />
       )}
     </div>
+    </NotificationProvider>
+    </ToastProvider>
   )
 }
 
